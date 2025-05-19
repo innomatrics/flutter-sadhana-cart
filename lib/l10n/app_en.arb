@@ -1,0 +1,15 @@
+{
+  "@@locale": "en",
+  "profile": "Profile",
+  "ordersHistory": "Orders History",
+  "privacyPolicy": "Privacy and Policies",
+  "termsConditions": "Terms & Conditions",
+  "aboutUs": "About Us",
+  "shippingPolicy": "Shipping Policy",
+  "changeTheme": "Change Theme",
+  "selectLanguage": "Select Language",
+  "english": "English",
+  "kannada": "Kannada",
+  "telugu": "Telugu",
+  "hindi": "Hindi"
+}
