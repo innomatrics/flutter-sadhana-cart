@@ -225,6 +225,7 @@ class AccountScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final Size size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Seller Account'),
@@ -255,31 +256,45 @@ class AccountScreen extends StatelessWidget {
           } else {
             // Display the seller data
             Map<String, dynamic> sellerData = snapshot.data!;
-            return ListView(
-              padding: const EdgeInsets.all(16.0),
-              children: sellerData.entries.map((entry) {
-                if (entry.key.toLowerCase().contains('image') ||
-                    entry.key.toLowerCase().contains('url')) {
-                  // Display image if the key contains 'image' or 'url'
-                  return ListTile(
-                    title: Text(entry.key),
-                    subtitle: entry.value.toString().startsWith('http')
-                        ? Image.network(
-                            entry.value.toString(),
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
-                          )
-                        : Text(entry.value.toString()),
-                  );
-                } else {
-                  // Display other fields as text
-                  return ListTile(
-                    title: Text(entry.key),
-                    subtitle: Text(entry.value.toString()),
-                  );
-                }
-              }).toList(),
+            return Column(
+              children: [
+                Container(
+                  height: size.height * 0.25,
+                  width: size.width * 0.50,
+                  decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius:
+                          const BorderRadius.all(Radius.circular(200))),
+                ),
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16.0),
+                    children: sellerData.entries.map((entry) {
+                      if (entry.key.toLowerCase().contains('image') ||
+                          entry.key.toLowerCase().contains('url')) {
+                        // Display image if the key contains 'image' or 'url'
+                        return ListTile(
+                          title: Text(entry.key),
+                          subtitle: entry.value.toString().startsWith('http')
+                              ? Image.network(
+                                  entry.value.toString(),
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                )
+                              : Text(entry.value.toString()),
+                        );
+                      } else {
+                        // Display other fields as text
+                        return ListTile(
+                          title: Text(entry.key),
+                          subtitle: Text(entry.value.toString()),
+                        );
+                      }
+                    }).toList(),
+                  ),
+                ),
+              ],
             );
           }
         },

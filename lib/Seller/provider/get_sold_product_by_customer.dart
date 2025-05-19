@@ -1,6 +1,12 @@
+import 'dart:developer';
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class GetSoldProductByCustomer extends ChangeNotifier {
   List<Map<String, dynamic>> _allSoldProductByCustomer = [];
@@ -134,5 +140,72 @@ class GetSoldProductByCustomer extends ChangeNotifier {
       }
     }
     return false;
+  }
+
+  Future<bool> uploadSellerImages({
+    required BuildContext context,
+    required File image,
+  }) async {
+    try {
+      final FirebaseStorage firebaseStorage = FirebaseStorage.instance;
+      final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
+      final currentUser = firebaseAuth.currentUser!.uid;
+
+      //  Upload image to Firebase Storage
+      final ref = firebaseStorage
+          .ref()
+          .child('sellers_documents')
+          .child(currentUser)
+          .child(DateTime.now().millisecondsSinceEpoch.toString());
+
+      final uploadTask = await ref.putFile(image);
+      final imageUrl = await uploadTask.ref.getDownloadURL();
+
+      //  Save the image URL to Firestore
+      final CollectionReference collectionReference =
+          FirebaseFirestore.instance.collection('seller');
+
+      await collectionReference.doc(currentUser).set({
+        'sellerImages': FieldValue.arrayUnion([imageUrl])
+      }, SetOptions(merge: true));
+
+      // Save to SharedPreferences
+      final pref = await SharedPreferences.getInstance();
+      final sellerImages = pref.getStringList('sellerImages') ?? [];
+      sellerImages.add(imageUrl);
+      await pref.setStringList('sellerImages', sellerImages);
+
+      notifyListeners();
+      return true;
+    } on FirebaseException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.message ?? "Upload failed")));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+    return false;
+  }
+
+  Future<File> pickerImagesFromGallery({required BuildContext context}) async {
+    File image = File('');
+    try {
+      final pickerFile =
+          await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (pickerFile != null) {
+        image = File(pickerFile.path);
+      }
+      notifyListeners();
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+    return image;
   }
 }

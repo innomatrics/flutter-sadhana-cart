@@ -1,0 +1,2 @@
+C:/Users/srisr/Downloads/Compressed/sadhana_cart-main/android/app/.cxx/Debug/u6t65651/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/srisr/Downloads/Compressed/sadhana_cart-main/android/app/.cxx/Debug/u6t65651/armeabi-v7a/CMakeFiles/rebuild_cache.dir
