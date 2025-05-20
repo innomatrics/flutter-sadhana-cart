@@ -1,0 +1,2 @@
+D:/Projects/Innomatrics projects/sadhana_cart-main/android/app/.cxx/Debug/69502w4t/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/Projects/Innomatrics projects/sadhana_cart-main/android/app/.cxx/Debug/69502w4t/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -157,6 +157,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SadhnaCart Seller',
       themeMode: themeProvider.themeMode,
+
       theme: ThemeData.light().copyWith(
           // your customized light theme code here...
           ),

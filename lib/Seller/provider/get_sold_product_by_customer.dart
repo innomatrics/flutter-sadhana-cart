@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,8 +9,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class GetSoldProductByCustomer extends ChangeNotifier {
   List<Map<String, dynamic>> _allSoldProductByCustomer = [];
+  Map<String, dynamic> _currentUserDetails = {};
   List<Map<String, dynamic>> get allSoldProductByCustomer =>
       _allSoldProductByCustomer;
+  Map<String, dynamic> get currentUserDetails => _currentUserDetails;
   List<Map<String, dynamic>> _filteredSoldProductByCustomer = [];
 
   List<Map<String, dynamic>> get filteredSoldProductByCustomer =>
@@ -207,5 +208,72 @@ class GetSoldProductByCustomer extends ChangeNotifier {
       }
     }
     return image;
+  }
+
+  Future<bool> replaceSellerImages({
+    required BuildContext context,
+    required File newImage,
+  }) async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser!.uid;
+      final storage = FirebaseStorage.instance;
+
+      // Upload new image to Firebase Storage
+      final ref = storage.ref().child(
+          'sellers_documents/$currentUser/${DateTime.now().millisecondsSinceEpoch}.jpg');
+      await ref.putFile(newImage);
+      final imageUrl = await ref.getDownloadURL();
+
+      final sellerDocRef =
+          FirebaseFirestore.instance.collection('seller').doc(currentUser);
+      await sellerDocRef.update({
+        'sellerImages': [imageUrl]
+      });
+
+      final pref = await SharedPreferences.getInstance();
+      await pref.setStringList('sellerImages', [imageUrl]);
+
+      notifyListeners();
+      return true;
+    } on FirebaseException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Upload failed")),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    }
+    return false;
+  }
+
+  Future<Map<String, dynamic>> fetchCurrentUserData(
+      {required BuildContext context}) async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser!.uid;
+      final CollectionReference collectionReference =
+          FirebaseFirestore.instance.collection('seller');
+
+      final snapshot = await collectionReference.doc(currentUser).get();
+      if (snapshot.exists) {
+        _currentUserDetails = snapshot.data() as Map<String, dynamic>;
+        notifyListeners();
+      }
+    } on FirebaseException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+    return _currentUserDetails;
   }
 }

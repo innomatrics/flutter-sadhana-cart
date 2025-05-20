@@ -1,9 +1,15 @@
+import 'dart:io';
+
 import 'package:animations/animations.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:provider/provider.dart';
+import 'package:sadhana_cart/Seller/provider/get_sold_product_by_customer.dart';
 import 'package:sadhana_cart/Seller/select_sell_type.dart';
+import 'package:sadhana_cart/Seller/seller_account_page/seller_account_page.dart';
 import 'package:sadhana_cart/Seller/seller_home.dart';
 import 'package:sadhana_cart/Seller/seller_my_products.dart';
 import 'package:sadhana_cart/Seller/seller_offer_upload.dart';
@@ -24,7 +30,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     const ChatScreen(),
     const UploadItemScreen(),
     const SellerOrdersScreen(),
-    const AccountScreen(),
+    const SellerAccountPage(),
   ];
 
   final List<String> _appBarTitles = [
@@ -45,6 +51,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
+        foregroundColor: Colors.transparent,
         title: Text(
           _appBarTitles[_currentIndex],
           style: TextStyle(
@@ -198,9 +205,14 @@ class ChatScreen extends StatelessWidget {
 //   }
 // }
 
-class AccountScreen extends StatelessWidget {
+class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
 
+  @override
+  State<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends State<AccountScreen> {
   // Function to fetch seller data based on the logged-in user
   Future<Map<String, dynamic>> fetchSellerData() async {
     // Get the current logged-in user
@@ -221,6 +233,31 @@ class AccountScreen extends StatelessWidget {
     } else {
       throw Exception('Seller document does not exist for the logged-in user.');
     }
+  }
+
+  void pickImage() async {
+    final provider =
+        Provider.of<GetSoldProductByCustomer>(context, listen: false);
+    final pickedFile = await provider.pickerImagesFromGallery(context: context);
+
+    if (pickedFile.path.isNotEmpty && context.mounted) {
+      await provider.uploadSellerImages(context: context, image: pickedFile);
+    }
+  }
+
+  void updateImage() async {
+    final provider =
+        Provider.of<GetSoldProductByCustomer>(context, listen: false);
+
+    final pickerFile = await provider.pickerImagesFromGallery(context: context);
+
+    if (pickerFile.path.isNotEmpty && context.mounted) {
+      await provider.replaceSellerImages(
+          context: context, newImage: pickerFile);
+    }
+    setState(() {
+      fetchSellerData();
+    });
   }
 
   @override
@@ -256,16 +293,38 @@ class AccountScreen extends StatelessWidget {
           } else {
             // Display the seller data
             Map<String, dynamic> sellerData = snapshot.data!;
+            final sellerImage = sellerData['sellerImages'][0];
             return Column(
               children: [
-                Container(
-                  height: size.height * 0.25,
-                  width: size.width * 0.50,
-                  decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(200))),
-                ),
+                sellerImage == null
+                    ? GestureDetector(
+                        onTap: pickImage,
+                        child: Container(
+                          height: size.height * 0.25,
+                          width: size.width * 0.50,
+                          decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(200))),
+                          child: const Center(
+                            child: Text("Upload Image"),
+                          ),
+                        ),
+                      )
+                    : GestureDetector(
+                        onTap: updateImage,
+                        child: Container(
+                          height: size.height * 0.25,
+                          width: size.width * 0.50,
+                          decoration: BoxDecoration(
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(200)),
+                              image: DecorationImage(
+                                  image:
+                                      CachedNetworkImageProvider(sellerImage),
+                                  fit: BoxFit.cover)),
+                        ),
+                      ),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.all(16.0),
