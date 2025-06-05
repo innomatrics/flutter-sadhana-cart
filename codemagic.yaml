@@ -1,0 +1,7 @@
+scripts:
+  pre-build:
+    - cd ios
+    - rm -f Podfile
+    - flutter pub get
+    - flutter clean
+    - cd ..
