@@ -1,15 +1,9 @@
-import 'dart:io';
-
 import 'package:animations/animations.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
-import 'package:provider/provider.dart';
-import 'package:sadhana_cart/Seller/provider/get_sold_product_by_customer.dart';
 import 'package:sadhana_cart/Seller/select_sell_type.dart';
-import 'package:sadhana_cart/Seller/seller_account_page/seller_account_page.dart';
 import 'package:sadhana_cart/Seller/seller_home.dart';
 import 'package:sadhana_cart/Seller/seller_my_products.dart';
 import 'package:sadhana_cart/Seller/seller_offer_upload.dart';
@@ -30,7 +24,7 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     const ChatScreen(),
     const UploadItemScreen(),
     const SellerOrdersScreen(),
-    const SellerAccountPage(),
+    const AccountScreen(),
   ];
 
   final List<String> _appBarTitles = [
@@ -51,7 +45,6 @@ class _BottomNavBarScreenState extends State<BottomNavBarScreen> {
     return Scaffold(
       appBar: AppBar(
         iconTheme: const IconThemeData(color: Colors.white),
-        foregroundColor: Colors.transparent,
         title: Text(
           _appBarTitles[_currentIndex],
           style: TextStyle(
@@ -205,14 +198,9 @@ class ChatScreen extends StatelessWidget {
 //   }
 // }
 
-class AccountScreen extends StatefulWidget {
+class AccountScreen extends StatelessWidget {
   const AccountScreen({super.key});
 
-  @override
-  State<AccountScreen> createState() => _AccountScreenState();
-}
-
-class _AccountScreenState extends State<AccountScreen> {
   // Function to fetch seller data based on the logged-in user
   Future<Map<String, dynamic>> fetchSellerData() async {
     // Get the current logged-in user
@@ -235,34 +223,8 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
-  void pickImage() async {
-    final provider =
-        Provider.of<GetSoldProductByCustomer>(context, listen: false);
-    final pickedFile = await provider.pickerImagesFromGallery(context: context);
-
-    if (pickedFile.path.isNotEmpty && context.mounted) {
-      await provider.uploadSellerImages(context: context, image: pickedFile);
-    }
-  }
-
-  void updateImage() async {
-    final provider =
-        Provider.of<GetSoldProductByCustomer>(context, listen: false);
-
-    final pickerFile = await provider.pickerImagesFromGallery(context: context);
-
-    if (pickerFile.path.isNotEmpty && context.mounted) {
-      await provider.replaceSellerImages(
-          context: context, newImage: pickerFile);
-    }
-    setState(() {
-      fetchSellerData();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final Size size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Seller Account'),
@@ -293,67 +255,31 @@ class _AccountScreenState extends State<AccountScreen> {
           } else {
             // Display the seller data
             Map<String, dynamic> sellerData = snapshot.data!;
-            final sellerImage = sellerData['sellerImages'][0];
-            return Column(
-              children: [
-                sellerImage == null
-                    ? GestureDetector(
-                        onTap: pickImage,
-                        child: Container(
-                          height: size.height * 0.25,
-                          width: size.width * 0.50,
-                          decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(200))),
-                          child: const Center(
-                            child: Text("Upload Image"),
-                          ),
-                        ),
-                      )
-                    : GestureDetector(
-                        onTap: updateImage,
-                        child: Container(
-                          height: size.height * 0.25,
-                          width: size.width * 0.50,
-                          decoration: BoxDecoration(
-                              borderRadius:
-                                  const BorderRadius.all(Radius.circular(200)),
-                              image: DecorationImage(
-                                  image:
-                                      CachedNetworkImageProvider(sellerImage),
-                                  fit: BoxFit.cover)),
-                        ),
-                      ),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.all(16.0),
-                    children: sellerData.entries.map((entry) {
-                      if (entry.key.toLowerCase().contains('image') ||
-                          entry.key.toLowerCase().contains('url')) {
-                        // Display image if the key contains 'image' or 'url'
-                        return ListTile(
-                          title: Text(entry.key),
-                          subtitle: entry.value.toString().startsWith('http')
-                              ? Image.network(
-                                  entry.value.toString(),
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                )
-                              : Text(entry.value.toString()),
-                        );
-                      } else {
-                        // Display other fields as text
-                        return ListTile(
-                          title: Text(entry.key),
-                          subtitle: Text(entry.value.toString()),
-                        );
-                      }
-                    }).toList(),
-                  ),
-                ),
-              ],
+            return ListView(
+              padding: const EdgeInsets.all(16.0),
+              children: sellerData.entries.map((entry) {
+                if (entry.key.toLowerCase().contains('image') ||
+                    entry.key.toLowerCase().contains('url')) {
+                  // Display image if the key contains 'image' or 'url'
+                  return ListTile(
+                    title: Text(entry.key),
+                    subtitle: entry.value.toString().startsWith('http')
+                        ? Image.network(
+                            entry.value.toString(),
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          )
+                        : Text(entry.value.toString()),
+                  );
+                } else {
+                  // Display other fields as text
+                  return ListTile(
+                    title: Text(entry.key),
+                    subtitle: Text(entry.value.toString()),
+                  );
+                }
+              }).toList(),
             );
           }
         },

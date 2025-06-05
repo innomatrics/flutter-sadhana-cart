@@ -9,14 +9,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class GetSoldProductByCustomer extends ChangeNotifier {
   List<Map<String, dynamic>> _allSoldProductByCustomer = [];
-  Map<String, dynamic> _currentUserDetails = {};
   List<Map<String, dynamic>> get allSoldProductByCustomer =>
       _allSoldProductByCustomer;
-  Map<String, dynamic> get currentUserDetails => _currentUserDetails;
   List<Map<String, dynamic>> _filteredSoldProductByCustomer = [];
+  Map<String, dynamic> _currentUserDetails = {};
 
   List<Map<String, dynamic>> get filteredSoldProductByCustomer =>
       _filteredSoldProductByCustomer;
+  Map<String, dynamic> get currentUserDetails => _currentUserDetails;
 
   Future<List<Map<String, dynamic>>> fetchSoldProductsByCustomer({
     required BuildContext context,

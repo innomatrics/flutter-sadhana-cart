@@ -157,7 +157,6 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'SadhnaCart Seller',
       themeMode: themeProvider.themeMode,
-
       theme: ThemeData.light().copyWith(
           // your customized light theme code here...
           ),
@@ -177,9 +176,9 @@ class MyApp extends StatelessWidget {
 
       // home: const AdminHomeScreen(),
 
-      // home: const SplashScreen(),
+      home: const SplashScreen(),
 
-      home: const SellerSignInScreen(), //seller
+      // home: const SellerSignInScreen(), //seller
 
       // home: AdminHomeScreen(),   // admin
     );

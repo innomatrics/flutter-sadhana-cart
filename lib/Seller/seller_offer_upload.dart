@@ -44,7 +44,7 @@ class _OffersUploadingScreenState extends State<OffersUploadingScreen> {
     }
   }
 
-  Future<void> _uploadBanner() async {
+  Future<void> _uploadBanner(BuildContext context) async {
     if (_selectedImage == null || _sellerId == null) return;
 
     setState(() => _isUploading = true);
@@ -67,7 +67,7 @@ class _OffersUploadingScreenState extends State<OffersUploadingScreen> {
         'uploadedAt': FieldValue.serverTimestamp(),
       });
 
-      ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Offer banner uploaded successfully!')),
       );
 
@@ -77,7 +77,7 @@ class _OffersUploadingScreenState extends State<OffersUploadingScreen> {
       });
     } catch (e) {
       print("Upload error: $e");
-      ScaffoldMessenger.of(context as BuildContext).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to upload banner.')),
       );
       setState(() => _isUploading = false);
@@ -121,12 +121,14 @@ class _OffersUploadingScreenState extends State<OffersUploadingScreen> {
               Padding(
                 padding: const EdgeInsets.only(top: 20.0),
                 child: ElevatedButton.icon(
-                  onPressed: _isUploading ? null : _uploadBanner,
+                  onPressed: () {
+                    _isUploading ? null : _uploadBanner(context);
+                  },
                   icon: const Icon(Icons.cloud_upload),
                   label: _isUploading
                       ? const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation(Colors.white),
-                  )
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        )
                       : const Text('Upload Banner'),
                 ),
               ),
