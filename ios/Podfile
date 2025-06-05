@@ -1,19 +1,24 @@
 # ios/Podfile
 
+# Define platform
 platform :ios, '13.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
-project 'Runner', {
-  'Debug' => :debug,
-  'Profile' => :release,
-  'Release' => :release,
-}
+# Load Flutter configuration
+require File.expand_path('../Flutter/ephemeral/.flutter-plugins', __FILE__) rescue nil
+require File.expand_path('../Flutter/ephemeral/.flutter-plugins-dependencies', __FILE__) rescue nil
+require File.expand_path('../Flutter/ephemeral/.symlinks/plugins/cloud_firestore/ios', __FILE__) rescue nil
+require File.expand_path('../Flutter/ephemeral/.symlinks/plugins/firebase_core/ios', __FILE__) rescue nil
+require File.expand_path('../Flutter/ephemeral/.symlinks/plugins/firebase_auth/ios', __FILE__) rescue nil
+
+# Load Flutter helper
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), File.dirname(__FILE__))
 
 target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  flutter_install_all_ios_pods(File.dirname(File.realpath(__FILE__)))
 end
