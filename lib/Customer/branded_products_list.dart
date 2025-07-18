@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:sadhana_cart/Customer/particular_product_details_screen.dart';
 
 class BrandProductsPage extends StatelessWidget {
   final String brandName;
@@ -38,10 +39,20 @@ class BrandProductsPage extends StatelessWidget {
 
           return GestureDetector(
             onTap: () {
-              Navigator.pushNamed(
+              // Navigator.pushNamed(
+              //   context,
+              //   '/particular_product_details',
+              //   arguments: {'productId': item['id']},
+              // );
+
+              Navigator.push(
                 context,
-                '/particular_product_details',
-                arguments: {'productId': item['id']},
+                MaterialPageRoute(
+                  builder: (context) =>
+                      ParticularProductDetailsScreen(
+                        productId: item['id'],
+                      ),
+                ),
               );
             },
             child: Card(

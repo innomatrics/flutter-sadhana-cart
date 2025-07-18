@@ -578,6 +578,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sadhana_cart/Customer/customer_signin.dart';
 import 'package:sadhana_cart/Customer/payment_method_screen.dart';
+import 'package:sadhana_cart/Web/Customer/payment_method_screen.dart';
 
 class AddressFormScreen extends StatefulWidget {
   final String productId;

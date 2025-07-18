@@ -786,6 +786,649 @@
 
 //testing
 
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:flutter/material.dart';
+// import 'package:carousel_slider/carousel_slider.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:sadhana_cart/Customer/customer_address_form.dart';
+// import 'package:sadhana_cart/Customer/customer_signin.dart';
+// import 'package:video_player/video_player.dart';
+//
+// class ParticularProductDetailsScreen extends StatefulWidget {
+//   final String productId;
+//
+//   const ParticularProductDetailsScreen({super.key, required this.productId});
+//
+//   @override
+//   _ParticularProductDetailsScreenState createState() =>
+//       _ParticularProductDetailsScreenState();
+// }
+//
+// int _quantity = 1;
+//
+// class _ParticularProductDetailsScreenState
+//     extends State<ParticularProductDetailsScreen> {
+//   late Future<Map<String, dynamic>> _productDetails;
+//   late List<VideoPlayerController> _videoControllers;
+//
+//   @override
+//   void initState() {
+//     super.initState();
+//     _productDetails = _fetchProductDetails();
+//     _videoControllers = [];
+//   }
+//
+//   @override
+//   void dispose() {
+//     // Dispose all video controllers to free up resources
+//     for (var controller in _videoControllers) {
+//       controller.dispose();
+//     }
+//     super.dispose();
+//   }
+//
+//   Future<Map<String, dynamic>> _fetchProductDetails() async {
+//     try {
+//       // Fetch all sellers
+//       QuerySnapshot sellersSnapshot =
+//           await FirebaseFirestore.instance.collection('seller').get();
+//
+//       // Iterate through each seller
+//       for (var sellerDoc in sellersSnapshot.docs) {
+//         String sellerId = sellerDoc.id;
+//
+//         // Fetch all categories for the seller
+//         var categories = [
+//           'Footwear',
+//           'Clothing',
+//           'Electronics',
+//           'Accessories',
+//           'Home Appliances',
+//           'Books',
+//           'Others'
+//         ];
+//
+//         for (var category in categories) {
+//           // Fetch the product document from the category subcollection
+//           DocumentSnapshot productSnapshot = await FirebaseFirestore.instance
+//               .collection('seller')
+//               .doc(sellerId)
+//               .collection(category)
+//               .doc(widget.productId)
+//               .get();
+//
+//           if (productSnapshot.exists) {
+//             // Return the product details if found
+//             return productSnapshot.data() as Map<String, dynamic>;
+//           }
+//         }
+//       }
+//
+//       // If no product is found, throw an exception
+//       throw Exception('Product not found');
+//     } catch (e) {
+//       throw Exception('Failed to fetch product details: $e');
+//     }
+//   }
+//
+//   void _initializeVideoControllers(List<String> videoUrls) {
+//     for (var videoUrl in videoUrls) {
+//       // Declare and initialize the controller
+//       final VideoPlayerController controller =
+//           VideoPlayerController.network(videoUrl);
+//
+//       // Initialize the controller and add it to the list
+//       controller.initialize().then((_) {
+//         // Mute the video
+//         controller.setVolume(0);
+//         // Start playing the video in a loop
+//         controller.setLooping(true);
+//         controller.play();
+//         setState(() {});
+//       });
+//
+//       // Add the controller to the list
+//       _videoControllers.add(controller);
+//     }
+//   }
+//
+//   Future<void> _addToCart(Map<String, dynamic> productDetails) async {
+//     try {
+//       // Get the current user from Firebase Auth
+//       User? user = FirebaseAuth.instance.currentUser;
+//
+//       if (user == null) {
+//         // If no user is logged in, navigate to the sign-in screen
+//         Navigator.push(
+//           context,
+//           MaterialPageRoute(builder: (context) => const CustomerSigninScreen()),
+//         );
+//         return;
+//       }
+//
+//       // Use the user's UID as the customerId
+//       String customerId = user.uid;
+//
+//       // Fetch the customer's document
+//       DocumentSnapshot customerSnapshot = await FirebaseFirestore.instance
+//           .collection('customers')
+//           .doc(customerId)
+//           .get();
+//
+//       if (!customerSnapshot.exists) {
+//         // If the customer document does not exist, navigate to the sign-in screen
+//         Navigator.push(
+//           context,
+//           MaterialPageRoute(builder: (context) => const CustomerSigninScreen()),
+//         );
+//         return;
+//       }
+//
+//       // Check if the customer is logged in
+//       String status = customerSnapshot['status'];
+//       if (status != 'loggedIn') {
+//         // If the customer is not logged in, navigate to the sign-in screen
+//         Navigator.push(
+//           context,
+//           MaterialPageRoute(builder: (context) => const CustomerSigninScreen()),
+//         );
+//         return;
+//       }
+//
+//       // Check if the product already exists in the cart
+//       DocumentSnapshot cartDoc = await FirebaseFirestore.instance
+//           .collection('customers')
+//           .doc(customerId)
+//           .collection('cart')
+//           .doc(widget.productId) // Check if product ID exists as a document
+//           .get();
+//
+//       if (cartDoc.exists) {
+//         // If the product already exists in the cart, show a message
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           const SnackBar(content: Text('Product already in cart')),
+//         );
+//         return;
+//       }
+//
+//       // Add the product to the cart using productId as the document ID
+//       await FirebaseFirestore.instance
+//           .collection('customers')
+//           .doc(customerId)
+//           .collection('cart')
+//           .doc(widget.productId) // Set document ID as productId
+//           .set({
+//         'productId': widget.productId,
+//         'name': productDetails['name'],
+//         'brandName': productDetails['brandName'],
+//         'productDetails': productDetails['productDetails'],
+//         'isShowCashOnDelivery': productDetails['isShowCashOnDelivery'],
+//         'images': productDetails['images'],
+//         'videos': productDetails['videos'],
+//         'timestamp': FieldValue.serverTimestamp(),
+//       });
+//
+//       // Show a success message
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(content: Text('Product added to cart')),
+//       );
+//     } catch (e) {
+//       // Handle errors
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Failed to add product to cart: $e')),
+//       );
+//     }
+//   }
+//
+//   // Future<void> _buyNow(Map<String, dynamic> productDetails) async {
+//   //   try {
+//   //     User? user = FirebaseAuth.instance.currentUser;
+//   //     if (user == null) {
+//   //       Navigator.push(
+//   //         context,
+//   //         MaterialPageRoute(builder: (context) => CustomerSigninScreen()),
+//   //       );
+//   //       return;
+//   //     }
+//   //
+//   //     String customerId = user.uid;
+//   //
+//   //     // Fetch customer document
+//   //     DocumentSnapshot customerSnapshot = await FirebaseFirestore.instance
+//   //         .collection('customers')
+//   //         .doc(customerId)
+//   //         .get();
+//   //
+//   //     if (!customerSnapshot.exists || customerSnapshot['status'] != 'loggedIn') {
+//   //       Navigator.push(
+//   //         context,
+//   //         MaterialPageRoute(builder: (context) => CustomerSigninScreen()),
+//   //       );
+//   //       return;
+//   //     }
+//   //
+//   //     // Navigate to Address Form Screen
+//   //     Navigator.push(
+//   //       context,
+//   //       MaterialPageRoute(
+//   //         builder: (context) => AddressFormScreen(productId: widget.productId,),
+//   //       ),
+//   //     );
+//   //
+//   //     Navigator.push(
+//   //       context,
+//   //       MaterialPageRoute(
+//   //         builder: (context) => AddressFormScreen(productId: widget.productId),
+//   //       ),
+//   //     );
+//   //   } catch (e) {
+//   //     ScaffoldMessenger.of(context).showSnackBar(
+//   //       SnackBar(content: Text('Failed to proceed: $e')),
+//   //     );
+//   //   }
+//   // }
+//   Future<void> _buyNow(Map<String, dynamic> productDetails) async {
+//     try {
+//       User? user = FirebaseAuth.instance.currentUser;
+//       if (user == null) {
+//         Navigator.push(
+//           context,
+//           MaterialPageRoute(builder: (context) => const CustomerSigninScreen()),
+//         );
+//         return;
+//       }
+//
+//       String customerId = user.uid;
+//
+//       // Fetch customer document
+//       DocumentSnapshot customerSnapshot = await FirebaseFirestore.instance
+//           .collection('customers')
+//           .doc(customerId)
+//           .get();
+//
+//       if (!customerSnapshot.exists ||
+//           customerSnapshot['status'] != 'loggedIn') {
+//         Navigator.push(
+//           context,
+//           MaterialPageRoute(builder: (context) => const CustomerSigninScreen()),
+//         );
+//         return;
+//       }
+//
+//       // Navigate to Address Form Screen with selected quantity
+//       Navigator.push(
+//         context,
+//         MaterialPageRoute(
+//           builder: (context) => AddressFormScreen(
+//             productId: widget.productId,
+//             quantity: _quantity, // Use the selected quantity
+//             isShowCashOnDelivery: productDetails['isShowCashOnDelivery'],
+//             sellerId: productDetails['productSellerId'],
+//           ),
+//         ),
+//       );
+//     } catch (e) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(content: Text('Failed to proceed: $e')),
+//       );
+//     }
+//   }
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       // appBar: AppBar(
+//       //   title: Text(widget.productId),
+//       // ),
+//
+//       appBar: AppBar(
+//         title: FutureBuilder<Map<String, dynamic>>(
+//           future: _productDetails,
+//           builder: (context, snapshot) {
+//             if (snapshot.connectionState == ConnectionState.waiting) {
+//               return const Text('Loading...');
+//             }
+//             if (snapshot.hasError || !snapshot.hasData) {
+//               return Text(widget.productId); // Fallback to product ID if error
+//             }
+//             return Text(snapshot.data!['name'] ?? widget.productId);
+//           },
+//         ),
+//       ),
+//       body: FutureBuilder<Map<String, dynamic>>(
+//         future: _productDetails,
+//         builder: (context, snapshot) {
+//           if (snapshot.connectionState == ConnectionState.waiting) {
+//             return const Center(child: CircularProgressIndicator());
+//           }
+//
+//           if (snapshot.hasError) {
+//             return Center(child: Text('Error: ${snapshot.error}'));
+//           }
+//
+//           if (!snapshot.hasData || snapshot.data!.isEmpty) {
+//             return const Center(child: Text('No product details found.'));
+//           }
+//
+//           Map<String, dynamic> productDetails = snapshot.data!;
+//           List<String> images =
+//               List<String>.from(productDetails['images'] ?? []);
+//           List<String> videos =
+//               List<String>.from(productDetails['videos'] ?? []);
+//           Map<String, dynamic> productInfo =
+//               productDetails['productDetails'] ?? {};
+//
+//           // Initialize video controllers if not already initialized
+//           if (_videoControllers.isEmpty && videos.isNotEmpty) {
+//             _initializeVideoControllers(videos);
+//           }
+//
+//           return SingleChildScrollView(
+//             child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 // Carousel Slider for Images and Videos
+//                 CarouselSlider(
+//                   options: CarouselOptions(
+//                     height: 300,
+//                     autoPlay: true,
+//                     aspectRatio: 16 / 9,
+//                     viewportFraction: 1.0,
+//                   ),
+//                   items: [
+//                     ...images.map((imageUrl) {
+//                       return Image.network(
+//                         imageUrl,
+//                         fit: BoxFit.cover,
+//                       );
+//                     }),
+//                     ..._videoControllers.map((controller) {
+//                       return controller.value.isInitialized
+//                           ? AspectRatio(
+//                               aspectRatio: controller.value.aspectRatio,
+//                               child: VideoPlayer(controller),
+//                             )
+//                           : const Center(child: CircularProgressIndicator());
+//                     }),
+//                   ],
+//                 ),
+//                 // Product Details
+//                 Padding(
+//                   padding: const EdgeInsets.all(16.0),
+//                   child: Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       // Display product name
+//                       Text(
+//                         productDetails['name'] ?? 'No Name',
+//                         style: const TextStyle(
+//                           fontSize: 24,
+//                           fontWeight: FontWeight.bold,
+//                         ),
+//                       ),
+//                       const SizedBox(height: 16),
+//
+//                       // Price Information Section
+//                       Card(
+//                         elevation: 2,
+//                         child: Padding(
+//                           padding: const EdgeInsets.all(12.0),
+//                           child: Column(
+//                             crossAxisAlignment: CrossAxisAlignment.start,
+//                             children: [
+//                               const Text(
+//                                 'Pricing Information',
+//                                 style: TextStyle(
+//                                   fontSize: 18,
+//                                   fontWeight: FontWeight.bold,
+//                                 ),
+//                               ),
+//                               const Divider(),
+//                               Row(
+//                                 children: [
+//                                   const Text(
+//                                     'Offer Price: ',
+//                                     style: TextStyle(
+//                                       fontSize: 16,
+//                                       fontWeight: FontWeight.bold,
+//                                     ),
+//                                   ),
+//                                   Text(
+//                                     '₹${productInfo['Offer Price'] ?? 'Not Available'}',
+//                                     style: const TextStyle(
+//                                       fontSize: 16,
+//                                       color: Colors.red,
+//                                     ),
+//                                   ),
+//                                 ],
+//                               ),
+//                               const SizedBox(height: 8),
+//                               Row(
+//                                 children: [
+//                                   const Text(
+//                                     'Original Price: ',
+//                                     style: TextStyle(
+//                                       fontSize: 16,
+//                                       fontWeight: FontWeight.bold,
+//                                     ),
+//                                   ),
+//                                   Text(
+//                                     '₹${productInfo['Price'] ?? 'Not Available'}',
+//                                     style: const TextStyle(
+//                                       fontSize: 16,
+//                                       decoration: TextDecoration.lineThrough,
+//                                       color: Colors.grey,
+//                                     ),
+//                                   ),
+//                                 ],
+//                               ),
+//                               const SizedBox(height: 8),
+//                               if (productInfo['Discount'] != null)
+//                                 Row(
+//                                   children: [
+//                                     const Text(
+//                                       'Discount: ',
+//                                       style: TextStyle(
+//                                         fontSize: 16,
+//                                         fontWeight: FontWeight.bold,
+//                                       ),
+//                                     ),
+//                                     Text(
+//                                       '${productInfo['Discount']}%',
+//                                       style: const TextStyle(
+//                                         fontSize: 16,
+//                                         color: Colors.green,
+//                                       ),
+//                                     ),
+//                                   ],
+//                                 ),
+//                             ],
+//                           ),
+//                         ),
+//                       ),
+//                       const SizedBox(height: 16),
+//
+//                       // Basic Information Section
+//                       Card(
+//                         elevation: 2,
+//                         child: Padding(
+//                           padding: const EdgeInsets.all(12.0),
+//                           child: Column(
+//                             crossAxisAlignment: CrossAxisAlignment.start,
+//                             children: [
+//                               const Text(
+//                                 'Basic Information',
+//                                 style: TextStyle(
+//                                   fontSize: 18,
+//                                   fontWeight: FontWeight.bold,
+//                                 ),
+//                               ),
+//                               const Divider(),
+//                               _buildDetailRow(
+//                                   'Brand', productDetails['brandName']),
+//                               _buildDetailRow(
+//                                   'Shop', productDetails['shopName']),
+//                               _buildDetailRow(
+//                                   'Category', productDetails['category']),
+//                               _buildDetailRow(
+//                                   'Expected Delivery', productDetails['expectedDelivery']),
+//                               _buildDetailRow(
+//                                   'Description', productDetails['description']),
+//                               // _buildDetailRow('Cash on Delivery',
+//                               //     productDetails['isShowCashOnDelivery']),
+//                             ],
+//                           ),
+//                         ),
+//                       ),
+//                       const SizedBox(height: 16),
+//
+//                       // Product Specifications Section
+//                       Card(
+//                         elevation: 2,
+//                         child: Padding(
+//                           padding: const EdgeInsets.all(12.0),
+//                           child: Column(
+//                             crossAxisAlignment: CrossAxisAlignment.start,
+//                             children: [
+//                               const Text(
+//                                 'Product Specifications',
+//                                 style: TextStyle(
+//                                   fontSize: 18,
+//                                   fontWeight: FontWeight.bold,
+//                                 ),
+//                               ),
+//                               const Divider(),
+//                               // Dynamically display all fields from productInfo
+//                               ...productInfo.entries.map((entry) {
+//                                 // Skip fields already shown in pricing section
+//                                 if (['Offer Price', 'Price', 'Discount']
+//                                     .contains(entry.key)) {
+//                                   return const SizedBox.shrink();
+//                                 }
+//                                 return _buildDetailRow(entry.key, entry.value);
+//                               }),
+//                             ],
+//                           ),
+//                         ),
+//                       ),
+//                       const SizedBox(height: 16),
+//
+//                       // Action Buttons
+//                       Padding(
+//                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
+//                         child: Column(
+//                           crossAxisAlignment: CrossAxisAlignment.stretch,
+//                           children: [
+//                             // Quantity selector
+//                             Row(
+//                               mainAxisAlignment: MainAxisAlignment.center,
+//                               children: [
+//                                 IconButton(
+//                                   icon: const Icon(Icons.remove),
+//                                   onPressed: () {
+//                                     if (_quantity > 1) {
+//                                       setState(() {
+//                                         _quantity--;
+//                                       });
+//                                     }
+//                                   },
+//                                 ),
+//                                 Text(
+//                                   '$_quantity',
+//                                   style: const TextStyle(fontSize: 18),
+//                                 ),
+//                                 IconButton(
+//                                   icon: const Icon(Icons.add),
+//                                   onPressed: () {
+//                                     setState(() {
+//                                       _quantity++;
+//                                     });
+//                                   },
+//                                 ),
+//                               ],
+//                             ),
+//                             const SizedBox(height: 12),
+//                             ElevatedButton(
+//                               onPressed: () => _addToCart(productDetails),
+//                               style: ElevatedButton.styleFrom(
+//                                 backgroundColor: Colors.blue,
+//                                 padding:
+//                                     const EdgeInsets.symmetric(vertical: 16),
+//                               ),
+//                               child: const Text(
+//                                 'Add to Cart',
+//                                 style: TextStyle(
+//                                     fontSize: 16, color: Colors.white),
+//                               ),
+//                             ),
+//                             const SizedBox(height: 12),
+//                             ElevatedButton(
+//                               onPressed: () => _buyNow(productDetails),
+//                               style: ElevatedButton.styleFrom(
+//                                 backgroundColor: Colors.green,
+//                                 padding:
+//                                     const EdgeInsets.symmetric(vertical: 16),
+//                               ),
+//                               child: const Text(
+//                                 'Buy Now',
+//                                 style: TextStyle(
+//                                     fontSize: 16, color: Colors.white),
+//                               ),
+//                             ),
+//                           ],
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           );
+//         },
+//       ),
+//     );
+//   }
+//
+//   Widget _buildDetailRow(String label, dynamic value) {
+//     if (value == null || value.toString().isEmpty) {
+//       return const SizedBox.shrink();
+//     }
+//
+//     return Padding(
+//       padding: const EdgeInsets.symmetric(vertical: 8.0),
+//       child: Row(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Expanded(
+//             flex: 2,
+//             child: Text(
+//               '$label:',
+//               style: const TextStyle(
+//                 fontSize: 16,
+//                 fontWeight: FontWeight.bold,
+//               ),
+//             ),
+//           ),
+//           Expanded(
+//             flex: 3,
+//             child: Text(
+//               value.toString(),
+//               style: const TextStyle(
+//                 fontSize: 16,
+//               ),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
+
+
+// Fixing
+
+
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
@@ -804,12 +1447,12 @@ class ParticularProductDetailsScreen extends StatefulWidget {
       _ParticularProductDetailsScreenState();
 }
 
-int _quantity = 1;
-
 class _ParticularProductDetailsScreenState
     extends State<ParticularProductDetailsScreen> {
   late Future<Map<String, dynamic>> _productDetails;
   late List<VideoPlayerController> _videoControllers;
+  int _quantity = 1;
+  int _availableQuantity = 0;
 
   @override
   void initState() {
@@ -820,7 +1463,6 @@ class _ParticularProductDetailsScreenState
 
   @override
   void dispose() {
-    // Dispose all video controllers to free up resources
     for (var controller in _videoControllers) {
       controller.dispose();
     }
@@ -829,15 +1471,12 @@ class _ParticularProductDetailsScreenState
 
   Future<Map<String, dynamic>> _fetchProductDetails() async {
     try {
-      // Fetch all sellers
       QuerySnapshot sellersSnapshot =
-          await FirebaseFirestore.instance.collection('seller').get();
+      await FirebaseFirestore.instance.collection('seller').get();
 
-      // Iterate through each seller
       for (var sellerDoc in sellersSnapshot.docs) {
         String sellerId = sellerDoc.id;
 
-        // Fetch all categories for the seller
         var categories = [
           'Footwear',
           'Clothing',
@@ -849,7 +1488,6 @@ class _ParticularProductDetailsScreenState
         ];
 
         for (var category in categories) {
-          // Fetch the product document from the category subcollection
           DocumentSnapshot productSnapshot = await FirebaseFirestore.instance
               .collection('seller')
               .doc(sellerId)
@@ -858,13 +1496,10 @@ class _ParticularProductDetailsScreenState
               .get();
 
           if (productSnapshot.exists) {
-            // Return the product details if found
             return productSnapshot.data() as Map<String, dynamic>;
           }
         }
       }
-
-      // If no product is found, throw an exception
       throw Exception('Product not found');
     } catch (e) {
       throw Exception('Failed to fetch product details: $e');
@@ -873,32 +1508,25 @@ class _ParticularProductDetailsScreenState
 
   void _initializeVideoControllers(List<String> videoUrls) {
     for (var videoUrl in videoUrls) {
-      // Declare and initialize the controller
       final VideoPlayerController controller =
-          VideoPlayerController.network(videoUrl);
+      VideoPlayerController.network(videoUrl);
 
-      // Initialize the controller and add it to the list
       controller.initialize().then((_) {
-        // Mute the video
         controller.setVolume(0);
-        // Start playing the video in a loop
         controller.setLooping(true);
         controller.play();
         setState(() {});
       });
 
-      // Add the controller to the list
       _videoControllers.add(controller);
     }
   }
 
   Future<void> _addToCart(Map<String, dynamic> productDetails) async {
     try {
-      // Get the current user from Firebase Auth
       User? user = FirebaseAuth.instance.currentUser;
 
       if (user == null) {
-        // If no user is logged in, navigate to the sign-in screen
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const CustomerSigninScreen()),
@@ -906,17 +1534,14 @@ class _ParticularProductDetailsScreenState
         return;
       }
 
-      // Use the user's UID as the customerId
       String customerId = user.uid;
 
-      // Fetch the customer's document
       DocumentSnapshot customerSnapshot = await FirebaseFirestore.instance
           .collection('customers')
           .doc(customerId)
           .get();
 
       if (!customerSnapshot.exists) {
-        // If the customer document does not exist, navigate to the sign-in screen
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const CustomerSigninScreen()),
@@ -924,10 +1549,8 @@ class _ParticularProductDetailsScreenState
         return;
       }
 
-      // Check if the customer is logged in
       String status = customerSnapshot['status'];
       if (status != 'loggedIn') {
-        // If the customer is not logged in, navigate to the sign-in screen
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const CustomerSigninScreen()),
@@ -935,28 +1558,25 @@ class _ParticularProductDetailsScreenState
         return;
       }
 
-      // Check if the product already exists in the cart
       DocumentSnapshot cartDoc = await FirebaseFirestore.instance
           .collection('customers')
           .doc(customerId)
           .collection('cart')
-          .doc(widget.productId) // Check if product ID exists as a document
+          .doc(widget.productId)
           .get();
 
       if (cartDoc.exists) {
-        // If the product already exists in the cart, show a message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Product already in cart')),
         );
         return;
       }
 
-      // Add the product to the cart using productId as the document ID
       await FirebaseFirestore.instance
           .collection('customers')
           .doc(customerId)
           .collection('cart')
-          .doc(widget.productId) // Set document ID as productId
+          .doc(widget.productId)
           .set({
         'productId': widget.productId,
         'name': productDetails['name'],
@@ -965,68 +1585,20 @@ class _ParticularProductDetailsScreenState
         'isShowCashOnDelivery': productDetails['isShowCashOnDelivery'],
         'images': productDetails['images'],
         'videos': productDetails['videos'],
+        'quantity': _quantity, // Add selected quantity
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // Show a success message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Product added to cart')),
       );
     } catch (e) {
-      // Handle errors
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to add product to cart: $e')),
       );
     }
   }
 
-  // Future<void> _buyNow(Map<String, dynamic> productDetails) async {
-  //   try {
-  //     User? user = FirebaseAuth.instance.currentUser;
-  //     if (user == null) {
-  //       Navigator.push(
-  //         context,
-  //         MaterialPageRoute(builder: (context) => CustomerSigninScreen()),
-  //       );
-  //       return;
-  //     }
-  //
-  //     String customerId = user.uid;
-  //
-  //     // Fetch customer document
-  //     DocumentSnapshot customerSnapshot = await FirebaseFirestore.instance
-  //         .collection('customers')
-  //         .doc(customerId)
-  //         .get();
-  //
-  //     if (!customerSnapshot.exists || customerSnapshot['status'] != 'loggedIn') {
-  //       Navigator.push(
-  //         context,
-  //         MaterialPageRoute(builder: (context) => CustomerSigninScreen()),
-  //       );
-  //       return;
-  //     }
-  //
-  //     // Navigate to Address Form Screen
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(
-  //         builder: (context) => AddressFormScreen(productId: widget.productId,),
-  //       ),
-  //     );
-  //
-  //     Navigator.push(
-  //       context,
-  //       MaterialPageRoute(
-  //         builder: (context) => AddressFormScreen(productId: widget.productId),
-  //       ),
-  //     );
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Failed to proceed: $e')),
-  //     );
-  //   }
-  // }
   Future<void> _buyNow(Map<String, dynamic> productDetails) async {
     try {
       User? user = FirebaseAuth.instance.currentUser;
@@ -1040,7 +1612,6 @@ class _ParticularProductDetailsScreenState
 
       String customerId = user.uid;
 
-      // Fetch customer document
       DocumentSnapshot customerSnapshot = await FirebaseFirestore.instance
           .collection('customers')
           .doc(customerId)
@@ -1055,13 +1626,12 @@ class _ParticularProductDetailsScreenState
         return;
       }
 
-      // Navigate to Address Form Screen with selected quantity
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => AddressFormScreen(
             productId: widget.productId,
-            quantity: _quantity, // Use the selected quantity
+            quantity: _quantity,
             isShowCashOnDelivery: productDetails['isShowCashOnDelivery'],
             sellerId: productDetails['productSellerId'],
           ),
@@ -1078,7 +1648,18 @@ class _ParticularProductDetailsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.productId),
+        title: FutureBuilder<Map<String, dynamic>>(
+          future: _productDetails,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('Loading...');
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return Text(widget.productId);
+            }
+            return Text(snapshot.data!['name'] ?? widget.productId);
+          },
+        ),
       ),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _productDetails,
@@ -1097,9 +1678,9 @@ class _ParticularProductDetailsScreenState
 
           Map<String, dynamic> productDetails = snapshot.data!;
           List<String> images =
-              List<String>.from(productDetails['images'] ?? []);
+          List<String>.from(productDetails['images'] ?? []);
           List<String> videos =
-              List<String>.from(productDetails['videos'] ?? []);
+          List<String>.from(productDetails['videos'] ?? []);
           Map<String, dynamic> productInfo =
               productDetails['productDetails'] ?? {};
 
@@ -1108,11 +1689,15 @@ class _ParticularProductDetailsScreenState
             _initializeVideoControllers(videos);
           }
 
+          // Update available quantity
+          _availableQuantity = int.tryParse(
+              (productInfo['Quantity'] ?? '0').toString()) ??
+              0;
+
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Carousel Slider for Images and Videos
                 CarouselSlider(
                   options: CarouselOptions(
                     height: 300,
@@ -1130,20 +1715,18 @@ class _ParticularProductDetailsScreenState
                     ..._videoControllers.map((controller) {
                       return controller.value.isInitialized
                           ? AspectRatio(
-                              aspectRatio: controller.value.aspectRatio,
-                              child: VideoPlayer(controller),
-                            )
+                        aspectRatio: controller.value.aspectRatio,
+                        child: VideoPlayer(controller),
+                      )
                           : const Center(child: CircularProgressIndicator());
                     }),
                   ],
                 ),
-                // Product Details
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Display product name
                       Text(
                         productDetails['name'] ?? 'No Name',
                         style: const TextStyle(
@@ -1152,8 +1735,6 @@ class _ParticularProductDetailsScreenState
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Price Information Section
                       Card(
                         elevation: 2,
                         child: Padding(
@@ -1232,8 +1813,6 @@ class _ParticularProductDetailsScreenState
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Basic Information Section
                       Card(
                         elevation: 2,
                         child: Padding(
@@ -1256,16 +1835,14 @@ class _ParticularProductDetailsScreenState
                               _buildDetailRow(
                                   'Category', productDetails['category']),
                               _buildDetailRow(
+                                  'Expected Delivery', productDetails['expectedDelivery']),
+                              _buildDetailRow(
                                   'Description', productDetails['description']),
-                              // _buildDetailRow('Cash on Delivery',
-                              //     productDetails['isShowCashOnDelivery']),
                             ],
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Product Specifications Section
                       Card(
                         elevation: 2,
                         child: Padding(
@@ -1281,9 +1858,7 @@ class _ParticularProductDetailsScreenState
                                 ),
                               ),
                               const Divider(),
-                              // Dynamically display all fields from productInfo
                               ...productInfo.entries.map((entry) {
-                                // Skip fields already shown in pricing section
                                 if (['Offer Price', 'Price', 'Discount']
                                     .contains(entry.key)) {
                                   return const SizedBox.shrink();
@@ -1295,14 +1870,11 @@ class _ParticularProductDetailsScreenState
                         ),
                       ),
                       const SizedBox(height: 16),
-
-                      // Action Buttons
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Quantity selector
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
@@ -1323,10 +1895,26 @@ class _ParticularProductDetailsScreenState
                                 IconButton(
                                   icon: const Icon(Icons.add),
                                   onPressed: () {
-                                    setState(() {
-                                      _quantity++;
-                                    });
+                                    if (_quantity < _availableQuantity) {
+                                      setState(() {
+                                        _quantity++;
+                                      });
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('Maximum available quantity reached'),
+                                          duration: Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
                                   },
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  child: Text(
+                                    'Available: $_availableQuantity',
+                                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                                  ),
                                 ),
                               ],
                             ),
@@ -1336,7 +1924,7 @@ class _ParticularProductDetailsScreenState
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue,
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
+                                const EdgeInsets.symmetric(vertical: 16),
                               ),
                               child: const Text(
                                 'Add to Cart',
@@ -1350,7 +1938,7 @@ class _ParticularProductDetailsScreenState
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
+                                const EdgeInsets.symmetric(vertical: 16),
                               ),
                               child: const Text(
                                 'Buy Now',

@@ -201,9 +201,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sadhana_cart/Customer/customer_chat_screen.dart';
 import 'package:sadhana_cart/Customer/faqs_screen.dart';
 import 'package:sadhana_cart/Customer/my_orders_screen.dart';
 import 'package:sadhana_cart/Customer/theme_provider.dart';
+
+import 'customer_signin.dart';
 
 class ProfileTab extends StatelessWidget {
   const ProfileTab({super.key});
@@ -212,11 +215,27 @@ class ProfileTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
 
+    // if (user == null) {
+    //   return const Scaffold(
+    //     body: Center(child: Text('No user logged in')),
+    //   );
+    // }
+
     if (user == null) {
+      // Delay navigation to avoid navigation during build phase
+      Future.microtask(() {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const CustomerSigninScreen()),
+        );
+      });
+
+      // Return a temporary widget while redirection happens
       return const Scaffold(
-        body: Center(child: Text('No user logged in')),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
+
 
     return Scaffold(
       body: FutureBuilder<DocumentSnapshot>(
@@ -252,6 +271,12 @@ class ProfileTab extends StatelessWidget {
                   title: 'FAQs',
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const FAQsScreen())),
 
+                ),
+                _buildSettingTile(
+                  context,
+                  icon: Icons.chat,
+                  title: 'Chat with Us',
+                  onTap: ()=> Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatScreen())),
                 ),
                 const SizedBox(height: 24),
                 _buildSectionTitle('Information'),

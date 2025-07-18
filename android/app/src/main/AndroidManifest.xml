@@ -7,7 +7,7 @@
 
 
     <application
-        android:label="SadhanaCart Seller"
+        android:label="SadhanaCart"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

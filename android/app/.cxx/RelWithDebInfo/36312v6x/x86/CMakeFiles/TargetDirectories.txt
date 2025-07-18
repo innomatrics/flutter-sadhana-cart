@@ -1,0 +1,2 @@
+C:/Users/HP/Downloads/sadhana_cart-main/sadhana_cart-main/android/app/.cxx/RelWithDebInfo/36312v6x/x86/CMakeFiles/edit_cache.dir
+C:/Users/HP/Downloads/sadhana_cart-main/sadhana_cart-main/android/app/.cxx/RelWithDebInfo/36312v6x/x86/CMakeFiles/rebuild_cache.dir

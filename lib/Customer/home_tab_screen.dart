@@ -1487,7 +1487,7 @@
 //   }
 // }
 
-// Fixing the issue to scroll from top to bottom
+// Fixing the issue to scroll from top to bottom IT IS GOOD
 
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -1495,6 +1495,7 @@ import 'package:flutter/material.dart';
 import 'package:sadhana_cart/Customer/app_localization.dart';
 import 'package:sadhana_cart/Customer/branded_products_list.dart';
 import 'package:sadhana_cart/Customer/see_all_brands_screen.dart';
+import 'package:async/async.dart';
 
 // Import your other screens here
 import 'category_products_screen.dart';
@@ -1517,45 +1518,50 @@ class HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final localizations = AppLocalizations.of(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isLargeScreen = screenWidth > 800;
 
     return Scaffold(
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('seller').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+        builder: (context, sellersSnapshot) {
+          if (sellersSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+          if (sellersSnapshot.hasError) {
+            return Center(child: Text('Error: ${sellersSnapshot.error}'));
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          if (!sellersSnapshot.hasData || sellersSnapshot.data!.docs.isEmpty) {
             return const Center(child: Text('No sellers found.'));
           }
 
-          return FutureBuilder<List<Map<String, dynamic>>>(
-            future: _fetchAllSellerItems(snapshot.data!.docs),
-            builder: (context, itemSnapshot) {
-              if (itemSnapshot.connectionState == ConnectionState.waiting) {
+
+          return StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _getProductsStream(sellersSnapshot.data!.docs),
+            builder: (context, productsSnapshot) {
+              if (productsSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (itemSnapshot.hasError) {
-                return Center(child: Text('Error: ${itemSnapshot.error}'));
+              if (productsSnapshot.hasError) {
+                return Center(child: Text('Error: ${productsSnapshot.error}'));
               }
 
-              if (!itemSnapshot.hasData || itemSnapshot.data!.isEmpty) {
-                return const Center(child: Text('No items found.'));
+              if (!productsSnapshot.hasData || productsSnapshot.data!.isEmpty) {
+                return const Center(child: Text('No available products found.'));
               }
+
+              List<Map<String, dynamic>> allItems = productsSnapshot.data!;
 
               // Separate offers from regular items
-              List<Map<String, dynamic>> offers = itemSnapshot.data!
+              List<Map<String, dynamic>> offers = allItems
                   .where((item) => item['bannerUrl'] != null)
                   .toList();
 
               // Get regular items (non-offers)
-              List<Map<String, dynamic>> regularItems = itemSnapshot.data!
+              List<Map<String, dynamic>> regularItems = allItems
                   .where((item) => item['bannerUrl'] == null)
                   .toList();
 
@@ -1573,8 +1579,7 @@ class HomeTab extends StatelessWidget {
 
               // Get unique brand names
               Set<String> brandNamesSet = regularItems
-                  .where((item) =>
-                      item['brandName'] != null && item['brandName'].isNotEmpty)
+                  .where((item) => item['brandName'] != null && item['brandName'].isNotEmpty)
                   .map((item) => item['brandName'] as String)
                   .toSet();
               List<String> brandNames = brandNamesSet.toList();
@@ -1678,12 +1683,104 @@ class HomeTab extends StatelessWidget {
 
                     // offers
 
-                    if (offers.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 12.0, horizontal: 8.0),
-                        child: _buildOffersCarousel(context, offers),
-                      ),
+                    // if (offers.isNotEmpty)
+                    //   Padding(
+                    //     padding: const EdgeInsets.symmetric(
+                    //         vertical: 12.0, horizontal: 8.0),
+                    //     child: _buildOffersCarousel(context, offers),
+                    //   ),
+
+                    // StreamBuilder<QuerySnapshot>(
+                    //   stream: FirebaseFirestore.instance
+                    //       .collection('admin')
+                    //       .doc('admin_document')
+                    //       .collection('banners')
+                    //       .where('isActive', isEqualTo: true)
+                    //       .snapshots(), // Removed orderBy to avoid index requirement
+                    //   builder: (context, bannerSnapshot) {
+                    //     if (bannerSnapshot.connectionState == ConnectionState.waiting) {
+                    //       return const SizedBox(
+                    //           height: 180,
+                    //           child: Center(child: CircularProgressIndicator()));
+                    //     }
+                    //
+                    //     if (bannerSnapshot.hasError) {
+                    //       return SizedBox(
+                    //           height: 180,
+                    //           child: Center(
+                    //               child: Text('Error loading banners: ${bannerSnapshot.error}')));
+                    //     }
+                    //
+                    //     if (!bannerSnapshot.hasData || bannerSnapshot.data!.docs.isEmpty) {
+                    //       return const SizedBox();
+                    //     }
+                    //
+                    //     // Sort locally if needed
+                    //     final banners = bannerSnapshot.data!.docs;
+                    //     banners.sort((a, b) {
+                    //       final aDate = a['createdAt'] as Timestamp? ?? Timestamp.now();
+                    //       final bDate = b['createdAt'] as Timestamp? ?? Timestamp.now();
+                    //       return bDate.compareTo(aDate);
+                    //     });
+                    //
+                    //     return Padding(
+                    //       padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+                    //       child: _buildBannersCarousel(context, banners),
+                    //     );
+                    //   },
+                    // ),  working
+
+
+                    // In your HomeTab widget's build method, replace the banner section with:
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('admin')
+                          .doc('admin_document')
+                          .collection('banners')
+                          .where('isActive', isEqualTo: true)
+                          .snapshots(),
+                      builder: (context, bannerSnapshot) {
+                        if (bannerSnapshot.connectionState == ConnectionState.waiting) {
+                          return const SizedBox(
+                              height: 180,
+                              child: Center(child: CircularProgressIndicator()));
+                        }
+
+                        if (bannerSnapshot.hasError) {
+                          return SizedBox(
+                              height: 180,
+                              child: Center(
+                                  child: Text('Error loading banners: ${bannerSnapshot.error}')));
+                        }
+
+                        if (!bannerSnapshot.hasData || bannerSnapshot.data!.docs.isEmpty) {
+                          return const SizedBox();
+                        }
+
+                        return Column(
+                          children: [
+                            const Divider(
+                              thickness: 1,
+                              height: 20,
+                              color: Colors.black12,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+                              child: _buildBannersCarousel(context, bannerSnapshot.data!.docs),
+                            ),
+                            const Divider(
+                              thickness: 1,
+                              height: 20,
+                              color: Colors.black12,
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+
+                    // Deals of the Day Section - Web style
+                    // _buildDealsOfTheDay(context, regularItems, isLargeScreen),
+                    _buildDealsOfTheDay(context, regularItems),
 
                     // Horizontal Brand Names List
                     if (brandNames.isNotEmpty)
@@ -2000,6 +2097,492 @@ class HomeTab extends StatelessWidget {
     );
   }
 
+  // Widget _buildDealsOfTheDay(BuildContext context, List<Map<String, dynamic>> items, bool isLargeScreen) {
+  //   // Filter items with discounts
+  //   List<Map<String, dynamic>> discountedItems = items.where((item) {
+  //     final productDetails = item['productDetails'] ?? {};
+  //     return productDetails['Price'] != null &&
+  //         productDetails['Offer Price'] != null &&
+  //         productDetails['Price'] != productDetails['Offer Price'];
+  //   }).toList();
+  //
+  //   // Sort by discount percentage (highest first)
+  //   discountedItems.sort((a, b) {
+  //     final aDetails = a['productDetails'] ?? {};
+  //     final bDetails = b['productDetails'] ?? {};
+  //     double aPrice = double.tryParse(aDetails['Price']?.toString() ?? '0') ?? 0;
+  //     double aOffer = double.tryParse(aDetails['Offer Price']?.toString() ?? '0') ?? 0;
+  //     double bPrice = double.tryParse(bDetails['Price']?.toString() ?? '0') ?? 0;
+  //     double bOffer = double.tryParse(bDetails['Offer Price']?.toString() ?? '0') ?? 0;
+  //
+  //     double aDiscount = aPrice > 0 ? ((aPrice - aOffer) / aPrice * 100) : 0;
+  //     double bDiscount = bPrice > 0 ? ((bPrice - bOffer) / bPrice * 100) : 0;
+  //
+  //     return bDiscount.compareTo(aDiscount);
+  //   });
+  //
+  //   if (discountedItems.isEmpty) {
+  //     return const SizedBox();
+  //   }
+  //
+  //   return Container(
+  //     padding: const EdgeInsets.symmetric(vertical: 16),
+  //     color: Colors.white,
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         const Padding(
+  //           padding: EdgeInsets.symmetric(horizontal: 16),
+  //           child: Text(
+  //             'Deals of the Day',
+  //             style: TextStyle(
+  //               fontSize: 20,
+  //               fontWeight: FontWeight.bold,
+  //             ),
+  //           ),
+  //         ),
+  //         const SizedBox(height: 8),
+  //         SizedBox(
+  //           height: isLargeScreen ? 280 : 240,
+  //           child: ListView.builder(
+  //             scrollDirection: Axis.horizontal,
+  //             padding: const EdgeInsets.symmetric(horizontal: 16),
+  //             itemCount: discountedItems.length > 10 ? 10 : discountedItems.length,
+  //             itemBuilder: (context, index) {
+  //               final item = discountedItems[index];
+  //               final productDetails = item['productDetails'] ?? {};
+  //               double price = double.tryParse(productDetails['Price']?.toString() ?? '0') ?? 0;
+  //               double offerPrice = double.tryParse(productDetails['Offer Price']?.toString() ?? '0') ?? 0;
+  //               int discount = price > 0 ? ((price - offerPrice) / price * 100).round() : 0;
+  //
+  //               return Container(
+  //                 width: isLargeScreen ? 180 : 160,
+  //                 margin: const EdgeInsets.only(right: 16),
+  //                 child: _buildProductCard(context, item, productDetails, showDiscount: true),
+  //               );
+  //             },
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+  //
+  // Widget _buildProductCard(BuildContext context, Map<String, dynamic> item,
+  //     Map<String, dynamic> productDetails, {bool showDiscount = false}) {
+  //   double price = double.tryParse(productDetails['Price']?.toString() ?? '0') ?? 0;
+  //   double offerPrice = double.tryParse(productDetails['Offer Price']?.toString() ?? '0') ?? 0;
+  //   int discount = price > 0 ? ((price - offerPrice) / price * 100).round() : 0;
+  //
+  //   return GestureDetector(
+  //     onTap: () {
+  //       Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //           builder: (context) => ParticularProductDetailsScreen(
+  //             productId: item['id'],
+  //           ),
+  //         ),
+  //       );
+  //     },
+  //     child: Card(
+  //       elevation: 2,
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(8),
+  //       ),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           // Product Image with Discount Badge
+  //           Stack(
+  //             children: [
+  //               ClipRRect(
+  //                 borderRadius: const BorderRadius.vertical(
+  //                     top: Radius.circular(8)),
+  //                 child: Container(
+  //                   height: 140,
+  //                   width: double.infinity,
+  //                   color: Colors.grey[100],
+  //                   child: item['images'] != null && item['images'].isNotEmpty
+  //                       ? Image.network(
+  //                     item['images'][0],
+  //                     fit: BoxFit.contain,
+  //                   )
+  //                       : const Center(
+  //                     child: Icon(Icons.image_not_supported, size: 40),
+  //                   ),
+  //                 ),
+  //               ),
+  //               if (showDiscount && discount > 0)
+  //                 Positioned(
+  //                   top: 8,
+  //                   left: 8,
+  //                   child: Container(
+  //                     padding: const EdgeInsets.symmetric(
+  //                         horizontal: 6, vertical: 4),
+  //                     decoration: BoxDecoration(
+  //                       color: Colors.red[600],
+  //                       borderRadius: BorderRadius.circular(4),
+  //                     ),
+  //                     child: Text(
+  //                       '$discount% OFF',
+  //                       style: const TextStyle(
+  //                         color: Colors.white,
+  //                         fontSize: 12,
+  //                         fontWeight: FontWeight.bold,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //             ],
+  //           ),
+  //           Padding(
+  //             padding: const EdgeInsets.all(8.0),
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text(
+  //                   item['name'] ?? 'No Name',
+  //                   style: const TextStyle(
+  //                     fontWeight: FontWeight.w500,
+  //                     fontSize: 14,
+  //                   ),
+  //                   maxLines: 2,
+  //                   overflow: TextOverflow.ellipsis,
+  //                 ),
+  //                 const SizedBox(height: 4),
+  //                 Text(
+  //                   item['brandName'] ?? 'No Brand',
+  //                   style: TextStyle(
+  //                       fontSize: 12,
+  //                       color: Colors.grey[600]),
+  //                   maxLines: 1,
+  //                   overflow: TextOverflow.ellipsis,
+  //                 ),
+  //                 const SizedBox(height: 8),
+  //                 Row(
+  //                   children: [
+  //                     Text(
+  //                       '₹${productDetails['Offer Price'] ?? '0'}',
+  //                       style: const TextStyle(
+  //                         fontWeight: FontWeight.bold,
+  //                         fontSize: 16,
+  //                         color: Colors.black87,
+  //                       ),
+  //                     ),
+  //                     const SizedBox(width: 8),
+  //                     if (productDetails['Price'] != null &&
+  //                         productDetails['Price'] !=
+  //                             productDetails['Offer Price'])
+  //                       Text(
+  //                         '₹${productDetails['Price']}',
+  //                         style: const TextStyle(
+  //                           fontSize: 12,
+  //                           color: Colors.grey,
+  //                           decoration: TextDecoration.lineThrough,
+  //                         ),
+  //                       ),
+  //                   ],
+  //                 ),
+  //                 const SizedBox(height: 4),
+  //                 if (!showDiscount && discount > 0)
+  //                   Text(
+  //                     '$discount% off',
+  //                     style: TextStyle(
+  //                       fontSize: 12,
+  //                       color: Colors.green[700],
+  //                       fontWeight: FontWeight.w500,
+  //                     ),
+  //                   ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
+
+  Widget _buildDealsOfTheDay(BuildContext context, List<Map<String, dynamic>> items) {
+    // Filter items with discounts and available quantity
+    List<Map<String, dynamic>> discountedItems = items.where((item) {
+      final productDetails = item['productDetails'] ?? {};
+      final quantity = int.tryParse(productDetails['Quantity']?.toString() ?? '1') ?? 1;
+      return quantity > 0 &&
+          productDetails['Price'] != null &&
+          productDetails['Offer Price'] != null &&
+          productDetails['Price'] != productDetails['Offer Price'];
+    }).toList();
+
+    // Sort by discount percentage (highest first)
+    discountedItems.sort((a, b) {
+      final aDetails = a['productDetails'] ?? {};
+      final bDetails = b['productDetails'] ?? {};
+      double aPrice = double.tryParse(aDetails['Price']?.toString() ?? '0') ?? 0;
+      double aOffer = double.tryParse(aDetails['Offer Price']?.toString() ?? '0') ?? 0;
+      double bPrice = double.tryParse(bDetails['Price']?.toString() ?? '0') ?? 0;
+      double bOffer = double.tryParse(bDetails['Offer Price']?.toString() ?? '0') ?? 0;
+
+      double aDiscount = aPrice > 0 ? ((aPrice - aOffer) / aPrice * 100) : 0;
+      double bDiscount = bPrice > 0 ? ((bPrice - bOffer) / bPrice * 100) : 0;
+
+      return bDiscount.compareTo(aDiscount);
+    });
+
+    if (discountedItems.isEmpty) {
+      return const SizedBox();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Deals of the Day',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 230, // Reduced height for mobile
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              itemCount: discountedItems.length > 5 ? 5 : discountedItems.length,
+              itemBuilder: (context, index) {
+                final item = discountedItems[index];
+                final productDetails = item['productDetails'] ?? {};
+                double price = double.tryParse(productDetails['Price']?.toString() ?? '0') ?? 0;
+                double offerPrice = double.tryParse(productDetails['Offer Price']?.toString() ?? '0') ?? 0;
+                int discount = price > 0 ? ((price - offerPrice) / price * 100).round() : 0;
+
+                return Container(
+                  width: 150, // Narrower card for mobile
+                  margin: const EdgeInsets.only(right: 8),
+                  child: _buildProductCard(context, item, productDetails, showDiscount: true),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductCard(BuildContext context, Map<String, dynamic> item,
+      Map<String, dynamic> productDetails, {bool showDiscount = false}) {
+    double price = double.tryParse(productDetails['Price']?.toString() ?? '0') ?? 0;
+    double offerPrice = double.tryParse(productDetails['Offer Price']?.toString() ?? '0') ?? 0;
+    int discount = price > 0 ? ((price - offerPrice) / price * 100).round() : 0;
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ParticularProductDetailsScreen(
+              productId: item['id'],
+            ),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 1, // Lower elevation for mobile
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        margin: const EdgeInsets.all(4), // Smaller margin
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product Image with Discount Badge
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(8)),
+                  child: Container(
+                    height: 120, // Smaller image container
+                    width: double.infinity,
+                    color: Colors.grey[100],
+                    child: item['images'] != null && item['images'].isNotEmpty
+                        ? Image.network(
+                      item['images'][0],
+                      fit: BoxFit.cover, // Changed to cover for better mobile display
+                    )
+                        : const Center(
+                      child: Icon(Icons.image_not_supported, size: 30),
+                    ),
+                  ),
+                ),
+                if (showDiscount && discount > 0)
+                  Positioned(
+                    top: 6,
+                    left: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 4, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.red[600],
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: Text(
+                        '$discount% OFF',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10, // Smaller font
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(6), // Reduced padding
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item['name'] ?? 'No Name',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 13, // Smaller font
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2), // Reduced spacing
+                  Text(
+                    item['brandName'] ?? 'No Brand',
+                    style: TextStyle(
+                        fontSize: 11, // Smaller font
+                        color: Colors.grey[600]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6), // Reduced spacing
+                  Row(
+                    children: [
+                      Text(
+                        '₹${productDetails['Offer Price'] ?? '0'}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14, // Smaller font
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(width: 4), // Reduced spacing
+                      if (productDetails['Price'] != null &&
+                          productDetails['Price'] !=
+                              productDetails['Offer Price'])
+                        Text(
+                          '₹${productDetails['Price']}',
+                          style: const TextStyle(
+                            fontSize: 11, // Smaller font
+                            color: Colors.grey,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 2), // Reduced spacing
+                  if (!showDiscount && discount > 0)
+                    Text(
+                      '$discount% off',
+                      style: TextStyle(
+                        fontSize: 10, // Smaller font
+                        color: Colors.green[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Stream<List<Map<String, dynamic>>> _getProductsStream(List<QueryDocumentSnapshot> sellers) {
+    // Combine all streams from different sellers and categories
+    final allStreams = <Stream<List<Map<String, dynamic>>>>[];
+
+    for (final seller in sellers) {
+      final sellerId = seller.id;
+      final categories = [
+        'Clothing',
+        'Electronics',
+        'Footwear',
+        'Accessories',
+        'Home Appliances',
+        'Books',
+        'Vegetables'
+      ];
+
+      // Create streams for each category
+      for (final category in categories) {
+        final stream = FirebaseFirestore.instance
+            .collection('seller')
+            .doc(sellerId)
+            .collection(category)
+            .snapshots()
+            .asyncMap((snapshot) {
+          return snapshot.docs.map((doc) {
+            return {
+              ...doc.data(),
+              'sellerId': sellerId,
+              'category': category,
+              'id': doc.id,
+            };
+          }).where((item) {
+            // Filter out items with zero quantity
+            final productDetails = item['productDetails'] ?? {};
+            final quantity = int.tryParse(productDetails['Quantity']?.toString() ?? '1') ?? 1;
+            return quantity > 0;
+          }).toList();
+        });
+        allStreams.add(stream);
+      }
+
+      // Add offers stream
+      final offersStream = FirebaseFirestore.instance
+          .collection('seller')
+          .doc(sellerId)
+          .collection('offers')
+          .snapshots()
+          .asyncMap((snapshot) {
+        return snapshot.docs.map((doc) {
+          return {
+            ...doc.data(),
+            'sellerId': sellerId,
+            'id': doc.id,
+          };
+        }).where((item) {
+          // Filter out offers with zero quantity
+          final productDetails = item['productDetails'] ?? {};
+          final quantity = int.tryParse(productDetails['Quantity']?.toString() ?? '1') ?? 1;
+          return quantity > 0;
+        }).toList();
+      });
+      allStreams.add(offersStream);
+    }
+
+    // Combine all streams
+    return StreamZip(allStreams).map((listOfLists) {
+      return listOfLists.expand((list) => list).toList();
+    });
+  }
+
   Future<List<Map<String, dynamic>>> _fetchAllSellerItems(
       List<QueryDocumentSnapshot> sellers) async {
     List<Map<String, dynamic>> allItems = [];
@@ -2027,19 +2610,24 @@ class HomeTab extends StatelessWidget {
               .get();
 
           for (var doc in snapshot.docs) {
-            allItems.add({
-              ...doc.data(),
-              'sellerId': sellerId,
-              'category': category,
-              'id': doc.id,
-            });
+            var data = doc.data();
+            // Check if product has quantity and it's greater than 0
+            if ((data['productDetails']?['Quantity'] == null) ||
+                (int.tryParse(data['productDetails']?['Quantity']?.toString() ?? '0') ?? 0) > 0) {
+              allItems.add({
+                ...data,
+                'sellerId': sellerId,
+                'category': category,
+                'id': doc.id,
+              });
+            }
           }
         } catch (e) {
           print('Error fetching $category for seller $sellerId: $e');
         }
       }
 
-      // Fetch offers
+      // Fetch offers - also check quantity for offers
       try {
         var offersSnapshot = await FirebaseFirestore.instance
             .collection('seller')
@@ -2049,11 +2637,16 @@ class HomeTab extends StatelessWidget {
             .get();
 
         for (var offerDoc in offersSnapshot.docs) {
-          allItems.add({
-            ...offerDoc.data(),
-            'sellerId': sellerId,
-            'id': offerDoc.id,
-          });
+          var data = offerDoc.data();
+          // Check if product has quantity and it's greater than 0
+          if ((data['productDetails']?['Quantity'] == null) ||
+              (int.tryParse(data['productDetails']?['Quantity']?.toString() ?? '0') ?? 0) > 0) {
+            allItems.add({
+              ...data,
+              'sellerId': sellerId,
+              'id': offerDoc.id,
+            });
+          }
         }
       } catch (e) {
         print('Error fetching offers for seller $sellerId: $e');
@@ -2062,52 +2655,176 @@ class HomeTab extends StatelessWidget {
 
     return allItems;
   }
+
+  Stream<List<Map<String, dynamic>>> _getFilteredProductsStream() {
+    return FirebaseFirestore.instance.collection('seller').snapshots().asyncMap((sellersSnapshot) {
+      return _fetchAllSellerItems(sellersSnapshot.docs).then((allItems) {
+        // Filter out items with zero quantity
+        return allItems.where((item) {
+          final productDetails = item['productDetails'] ?? {};
+          final quantityStr = productDetails['Quantity']?.toString() ?? '1';
+          final quantity = int.tryParse(quantityStr) ?? 1;
+          return quantity > 0;
+        }).toList();
+      });
+    });
+  }
 }
 
-Widget _buildOffersCarousel(
-    BuildContext context, List<Map<String, dynamic>> offers) {
+// Widget _buildOffersCarousel(
+//     BuildContext context, List<Map<String, dynamic>> offers) {
+//   return Column(
+//     crossAxisAlignment: CrossAxisAlignment.start,
+//     children: [
+//       CarouselSlider.builder(
+//         itemCount: offers.length,
+//         options: CarouselOptions(
+//           height: 180,
+//           autoPlay: true,
+//           enlargeCenterPage: true,
+//           viewportFraction: 0.95, // Increased for wider images
+//           autoPlayInterval: const Duration(seconds: 4),
+//           autoPlayAnimationDuration: const Duration(milliseconds: 800),
+//           enlargeStrategy: CenterPageEnlargeStrategy.scale,
+//           aspectRatio: 16 / 9, // Consistent aspect ratio
+//         ),
+//         itemBuilder: (context, index, realIndex) {
+//           final offer = offers[index];
+//           return _buildCarouselItem(context, offer, index);
+//         },
+//       ),
+//     ],
+//   );
+// }
+//
+// Widget _buildCarouselItem(
+//     BuildContext context, Map<String, dynamic> offer, int index) {
+//   return GestureDetector(
+//     onTap: () {
+//       // Navigate to product details or offer-specific page
+//       Navigator.push(
+//         context,
+//         MaterialPageRoute(
+//           builder: (context) => ParticularProductDetailsScreen(
+//             productId: offer['id'],
+//           ),
+//         ),
+//       );
+//     },
+//     child: AnimatedContainer(
+//       duration: const Duration(milliseconds: 300),
+//       margin: const EdgeInsets.symmetric(
+//           horizontal: 4.0, vertical: 10.0), // Reduced horizontal margin
+//       decoration: BoxDecoration(
+//         borderRadius: BorderRadius.circular(16.0),
+//         boxShadow: [
+//           BoxShadow(
+//             color: Colors.black.withOpacity(0.1),
+//             blurRadius: 10,
+//             spreadRadius: 2,
+//             offset: const Offset(0, 4),
+//           ),
+//         ],
+//       ),
+//       child: ClipRRect(
+//         borderRadius: BorderRadius.circular(16.0),
+//         child: Stack(
+//           fit: StackFit.expand,
+//           children: [
+//             // Background Image
+//             Container(
+//               width: double.infinity, // Ensure full width
+//               decoration: BoxDecoration(
+//                 borderRadius: BorderRadius.circular(16.0),
+//                 image: DecorationImage(
+//                   image: NetworkImage(
+//                     offer['bannerUrl'] ?? 'https://via.placeholder.com/300',
+//                   ),
+//                   fit: BoxFit.cover, // Fill the container
+//                   alignment: Alignment.center,
+//                 ),
+//               ),
+//               child: offer['bannerUrl'] == null
+//                   ? Container(
+//                       color: Colors.grey[200],
+//                       child: const Icon(
+//                         Icons.broken_image,
+//                         size: 50,
+//                         color: Colors.grey,
+//                       ),
+//                     )
+//                   : null,
+//             ),
+//             // Gradient Overlay
+//             Container(
+//               decoration: BoxDecoration(
+//                 borderRadius: BorderRadius.circular(16.0),
+//                 gradient: LinearGradient(
+//                   begin: Alignment.topCenter,
+//                   end: Alignment.bottomCenter,
+//                   colors: [
+//                     Colors.black.withOpacity(0.1),
+//                     Colors.black.withOpacity(0.5),
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     ),
+//   );
+
+Widget _buildBannersCarousel(
+    BuildContext context, List<DocumentSnapshot> banners) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       CarouselSlider.builder(
-        itemCount: offers.length,
+        itemCount: banners.length,
         options: CarouselOptions(
           height: 180,
           autoPlay: true,
           enlargeCenterPage: true,
-          viewportFraction: 0.95, // Increased for wider images
+          viewportFraction: 0.95,
           autoPlayInterval: const Duration(seconds: 4),
           autoPlayAnimationDuration: const Duration(milliseconds: 800),
           enlargeStrategy: CenterPageEnlargeStrategy.scale,
-          aspectRatio: 16 / 9, // Consistent aspect ratio
+          aspectRatio: 16 / 9,
         ),
         itemBuilder: (context, index, realIndex) {
-          final offer = offers[index];
-          return _buildCarouselItem(context, offer, index);
+          final banner = banners[index];
+          return _buildBannerItem(context, banner, index);
         },
       ),
     ],
   );
 }
 
-Widget _buildCarouselItem(
-    BuildContext context, Map<String, dynamic> offer, int index) {
+Widget _buildBannerItem(
+    BuildContext context, DocumentSnapshot banner, int index) {
+  final imageUrl = banner['imageUrl'] as String?;
+  final percentage = banner['percentage'] as int?;
+  final category = banner['category'] as String?; // Assuming banners have a category field
+
+
   return GestureDetector(
     onTap: () {
-      // Navigate to product details or offer-specific page
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ParticularProductDetailsScreen(
-            productId: offer['id'],
+      if (category != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BannerProductsPage(
+              category: category,
+              discountPercentage: percentage ?? 0,
+            ),
           ),
-        ),
-      );
+        );
+      }
     },
     child: AnimatedContainer(
       duration: const Duration(milliseconds: 300),
-      margin: const EdgeInsets.symmetric(
-          horizontal: 4.0, vertical: 10.0), // Reduced horizontal margin
+      margin: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 10.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16.0),
         boxShadow: [
@@ -2126,26 +2843,26 @@ Widget _buildCarouselItem(
           children: [
             // Background Image
             Container(
-              width: double.infinity, // Ensure full width
+              width: double.infinity,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16.0),
-                image: DecorationImage(
-                  image: NetworkImage(
-                    offer['bannerUrl'] ?? 'https://via.placeholder.com/300',
-                  ),
-                  fit: BoxFit.cover, // Fill the container
+                image: imageUrl != null
+                    ? DecorationImage(
+                  image: NetworkImage(imageUrl),
+                  fit: BoxFit.cover,
                   alignment: Alignment.center,
-                ),
+                )
+                    : null,
               ),
-              child: offer['bannerUrl'] == null
+              child: imageUrl == null
                   ? Container(
-                      color: Colors.grey[200],
-                      child: const Icon(
-                        Icons.broken_image,
-                        size: 50,
-                        color: Colors.grey,
-                      ),
-                    )
+                color: Colors.grey[200],
+                child: const Icon(
+                  Icons.broken_image,
+                  size: 50,
+                  color: Colors.grey,
+                ),
+              )
                   : null,
             ),
             // Gradient Overlay
@@ -2162,9 +2879,286 @@ Widget _buildCarouselItem(
                 ),
               ),
             ),
+            // Percentage Badge
+            if (percentage != null)
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.redAccent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '$percentage% OFF',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
     ),
   );
 }
+
+
+class BannerProductsPage extends StatelessWidget {
+  final String category;
+  final int discountPercentage;
+
+  const BannerProductsPage({
+    required this.category,
+    required this.discountPercentage,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('$category - $discountPercentage% OFF'),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('seller').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(child: Text('No sellers found.'));
+          }
+
+          return FutureBuilder<List<Map<String, dynamic>>>(
+            future: _fetchDiscountedProducts(
+              snapshot.data!.docs,
+              category,
+              discountPercentage,
+            ),
+            builder: (context, itemSnapshot) {
+              if (itemSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (itemSnapshot.hasError) {
+                return Center(child: Text('Error: ${itemSnapshot.error}'));
+              }
+
+              if (!itemSnapshot.hasData || itemSnapshot.data!.isEmpty) {
+                return Center(
+                  child: Text('No discounted products found in $category'),
+                );
+              }
+
+              return GridView.builder(
+                padding: const EdgeInsets.all(8),
+                itemCount: itemSnapshot.data!.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 0.68,
+                ),
+                itemBuilder: (context, index) {
+                  final item = itemSnapshot.data![index];
+                  final productDetails = item['productDetails'] ?? {};
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ParticularProductDetailsScreen(
+                            productId: item['id'],
+                          ),
+                        ),
+                      );
+                    },
+                    child: Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Product Image
+                          ClipRRect(
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(12)),
+                            child: SizedBox(
+                              height: 135,
+                              width: double.infinity,
+                              child: item['images'] != null &&
+                                  item['images'].isNotEmpty
+                                  ? Image.network(
+                                item['images'][0],
+                                fit: BoxFit.cover,
+                              )
+                                  : Container(
+                                color: Colors.grey[200],
+                                child: const Center(
+                                    child: Icon(Icons.image_not_supported)),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(6.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item['name'] ?? 'No Name',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  item['brandName'] ?? 'No Brand',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Colors.grey),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    if (productDetails['Offer Price'] != null)
+                                      Text(
+                                        '₹${productDetails['Offer Price']}',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: Colors.blue,
+                                        ),
+                                      ),
+                                    const SizedBox(width: 4),
+                                    if (productDetails['Price'] != null &&
+                                        productDetails['Price'] !=
+                                            productDetails['Offer Price'])
+                                      Text(
+                                        '₹${productDetails['Price']}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                          decoration:
+                                          TextDecoration.lineThrough,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                // Display discount percentage
+                                if (productDetails['Price'] != null &&
+                                    productDetails['Offer Price'] != null)
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.redAccent,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      '${_calculateDiscountPercentage(
+                                        double.parse(
+                                            productDetails['Price'].toString()),
+                                        double.parse(productDetails['Offer Price']
+                                            .toString()),
+                                      )}% OFF',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+
+
+  Future<List<Map<String, dynamic>>> _fetchDiscountedProducts(
+      List<QueryDocumentSnapshot> sellers,
+      String category,
+      int discountPercentage,
+      ) async {
+    List<Map<String, dynamic>> discountedItems = [];
+
+    for (var seller in sellers) {
+      String sellerId = seller.id;
+
+      try {
+        var snapshot = await FirebaseFirestore.instance
+            .collection('seller')
+            .doc(sellerId)
+            .collection(category)
+            .get();
+
+        for (var doc in snapshot.docs) {
+          final data = doc.data();
+          if (data['productDetails'] != null) {
+            final productDetails = data['productDetails'] as Map<String, dynamic>;
+            // Check quantity first
+            final quantity = int.tryParse(productDetails['Quantity']?.toString() ?? '0') ?? 0;
+            if (quantity <= 0) continue;
+
+            if (productDetails['Price'] != null &&
+                productDetails['Offer Price'] != null) {
+              final price = double.parse(productDetails['Price'].toString());
+              final offerPrice =
+              double.parse(productDetails['Offer Price'].toString());
+              final calculatedDiscount = _calculateDiscountPercentage(price, offerPrice);
+
+              if (calculatedDiscount >= discountPercentage) {
+                discountedItems.add({
+                  ...data,
+                  'sellerId': sellerId,
+                  'category': category,
+                  'id': doc.id,
+                });
+              }
+            }
+          }
+        }
+      } catch (e) {
+        print('Error fetching $category for seller $sellerId: $e');
+      }
+    }
+
+    return discountedItems;
+  }
+
+  int _calculateDiscountPercentage(double originalPrice, double offerPrice) {
+    if (originalPrice <= 0) return 0;
+    return ((originalPrice - offerPrice) / originalPrice * 100).round();
+  }
+}
+
+
+

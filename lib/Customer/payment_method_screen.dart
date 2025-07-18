@@ -317,6 +317,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sadhana_cart/Customer/customer_signin.dart';
 import 'package:sadhana_cart/Customer/pay_through_razor_pay.dart';
+import 'package:sadhana_cart/Web/Customer/pay_through_razor_pay.dart';
 
 class PaymentMethodSelectionScreen extends StatefulWidget {
   final String productId;
@@ -373,6 +374,187 @@ class _PaymentMethodSelectionScreenState
     super.dispose();
   }
 
+  // Future<void> _placeOrder(BuildContext context) async {
+  //   setState(() => isLoading = true);
+  //
+  //   try {
+  //     User? user = FirebaseAuth.instance.currentUser;
+  //     if (user == null) {
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(builder: (context) => const CustomerSigninScreen()),
+  //       );
+  //       return;
+  //     }
+  //
+  //     String customerId = user.uid;
+  //
+  //     DocumentSnapshot customerSnapshot = await FirebaseFirestore.instance
+  //         .collection('customers')
+  //         .doc(customerId)
+  //         .get();
+  //
+  //     if (!customerSnapshot.exists ||
+  //         customerSnapshot['status'] != 'loggedIn') {
+  //       Navigator.pushReplacement(
+  //         context,
+  //         MaterialPageRoute(builder: (context) => const CustomerSigninScreen()),
+  //       );
+  //       return;
+  //     }
+  //
+  //     QuerySnapshot addressSnapshot = await FirebaseFirestore.instance
+  //         .collection('customers')
+  //         .doc(customerId)
+  //         .collection('addresses')
+  //         .orderBy('timestamp', descending: true)
+  //         .limit(1)
+  //         .get();
+  //
+  //     if (addressSnapshot.docs.isEmpty) {
+  //       _showSnackBar('Please add an address before placing order');
+  //       return;
+  //     }
+  //
+  //     Map<String, dynamic> addressDetails =
+  //         addressSnapshot.docs.first.data() as Map<String, dynamic>;
+  //
+  //     QuerySnapshot orderSnapshot = await FirebaseFirestore.instance
+  //         .collection('customers')
+  //         .doc(customerId)
+  //         .collection('orders')
+  //         .where('productId', isEqualTo: widget.productId)
+  //         .get();
+  //
+  //     if (orderSnapshot.docs.isNotEmpty) {
+  //       _showSnackBar('Product already ordered');
+  //       return;
+  //     }
+  //
+  //     QuerySnapshot sellersSnapshot =
+  //         await FirebaseFirestore.instance.collection('seller').get();
+  //
+  //     bool productFound = false;
+  //     String foundCategory = '';
+  //     Map<String, dynamic>? productInfo;
+  //
+  //     // Search through all categories for all sellers
+  //     for (var sellerDoc in sellersSnapshot.docs) {
+  //       String sellerId = sellerDoc.id;
+  //
+  //       for (String category in _categories) {
+  //         DocumentReference productRef = FirebaseFirestore.instance
+  //             .collection('seller')
+  //             .doc(sellerId)
+  //             .collection(category)
+  //             .doc(widget.productId);
+  //
+  //         DocumentSnapshot productSnapshot = await productRef.get();
+  //
+  //         if (productSnapshot.exists) {
+  //           productInfo = productSnapshot.data() as Map<String, dynamic>;
+  //           foundCategory = category;
+  //           productFound = true;
+  //           break;
+  //         }
+  //       }
+  //       if (productFound) break;
+  //     }
+  //
+  //     if (!productFound || productInfo == null) {
+  //       _showSnackBar('Product not found in any category');
+  //       return;
+  //     }
+  //
+  //     // Check quantity
+  //     int currentQuantity =
+  //         int.tryParse(productInfo['productDetails']['Quantity'].toString()) ??
+  //             0;
+  //
+  //     if (currentQuantity < widget.quantity) {
+  //       _showSnackBar('Only $currentQuantity items available');
+  //       return;
+  //     }
+  //
+  //     // Process the order
+  //     DocumentReference productRef = FirebaseFirestore.instance
+  //         .collection('seller')
+  //         .doc(sellersSnapshot.docs.first.id) // Using first seller found
+  //         .collection(foundCategory)
+  //         .doc(widget.productId);
+  //
+  //     await FirebaseFirestore.instance.runTransaction((transaction) async {
+  //       DocumentSnapshot updatedSnapshot = await transaction.get(productRef);
+  //       if (!updatedSnapshot.exists) return;
+  //
+  //       int updatedQuantity = int.tryParse(
+  //               updatedSnapshot['productDetails']['Quantity'].toString()) ??
+  //           0;
+  //
+  //       if (updatedQuantity >= widget.quantity) {
+  //         transaction.update(productRef, {
+  //           'productDetails.Quantity':
+  //               (updatedQuantity - widget.quantity).toString(),
+  //         });
+  //       } else {
+  //         throw Exception('Not enough stock available');
+  //       }
+  //     });
+  //
+  //     await FirebaseFirestore.instance
+  //         .collection('customers')
+  //         .doc(customerId)
+  //         .collection('orders')
+  //         .add({
+  //       'productId': widget.productId,
+  //       'name': productInfo['name'],
+  //       'brandName': productInfo['brandName'],
+  //       'expectedDelivery': productInfo['expectedDelivery'],
+  //       'category': foundCategory,
+  //       'description': productInfo['description'],
+  //       'images': productInfo['images'],
+  //       'videos': productInfo['videos'],
+  //       'Color': productInfo['productDetails']['Color'],
+  //       'Size': productInfo['productDetails']['Size'],
+  //       'Offer Price': productInfo['productDetails']['Offer Price'],
+  //       'Price': productInfo['productDetails']['Price'],
+  //       'isShowCashOnDelivery': productInfo['productDetails']
+  //           ['isShowCashOnDelivery'],
+  //       'status': 'pending',
+  //       'shopName': productInfo['productDetails']['shopName'],
+  //       'productSellerId': widget.selledId,
+  //       'addressDetails': addressDetails,
+  //       'paymentMethod': 'Cash on Delivery',
+  //       'quantity': widget.quantity,
+  //       'totalAmount': (int.tryParse(
+  //                   productInfo['productDetails']['Offer Price']?.toString() ??
+  //                       productInfo['productDetails']['Price'].toString()) ??
+  //               0) *
+  //           widget.quantity,
+  //       'timestamp': FieldValue.serverTimestamp(),
+  //     });
+  //
+  //     await FirebaseFirestore.instance
+  //         .collection('customers')
+  //         .doc(customerId)
+  //         .collection('cart')
+  //         .where('productId', isEqualTo: widget.productId)
+  //         .get()
+  //         .then((querySnapshot) {
+  //       for (var doc in querySnapshot.docs) {
+  //         doc.reference.delete();
+  //       }
+  //     });
+  //
+  //     _showSnackBar('Order placed successfully for ${widget.quantity} items');
+  //     Navigator.popUntil(context, (route) => route.isFirst);
+  //   } catch (e) {
+  //     _showSnackBar('Failed to place order: ${e.toString()}');
+  //   } finally {
+  //     setState(() => isLoading = false);
+  //   }
+  // }
+
   Future<void> _placeOrder(BuildContext context) async {
     setState(() => isLoading = true);
 
@@ -393,8 +575,7 @@ class _PaymentMethodSelectionScreenState
           .doc(customerId)
           .get();
 
-      if (!customerSnapshot.exists ||
-          customerSnapshot['status'] != 'loggedIn') {
+      if (!customerSnapshot.exists || customerSnapshot['status'] != 'loggedIn') {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const CustomerSigninScreen()),
@@ -416,7 +597,7 @@ class _PaymentMethodSelectionScreenState
       }
 
       Map<String, dynamic> addressDetails =
-          addressSnapshot.docs.first.data() as Map<String, dynamic>;
+      addressSnapshot.docs.first.data() as Map<String, dynamic>;
 
       QuerySnapshot orderSnapshot = await FirebaseFirestore.instance
           .collection('customers')
@@ -431,7 +612,7 @@ class _PaymentMethodSelectionScreenState
       }
 
       QuerySnapshot sellersSnapshot =
-          await FirebaseFirestore.instance.collection('seller').get();
+      await FirebaseFirestore.instance.collection('seller').get();
 
       bool productFound = false;
       String foundCategory = '';
@@ -467,13 +648,15 @@ class _PaymentMethodSelectionScreenState
 
       // Check quantity
       int currentQuantity =
-          int.tryParse(productInfo['productDetails']['Quantity'].toString()) ??
-              0;
+          int.tryParse(productInfo['productDetails']['Quantity'].toString()) ?? 0;
 
       if (currentQuantity < widget.quantity) {
         _showSnackBar('Only $currentQuantity items available');
         return;
       }
+
+      // Generate a unique order ID
+      String orderId = FirebaseFirestore.instance.collection('orders').doc().id;
 
       // Process the order
       DocumentReference productRef = FirebaseFirestore.instance
@@ -487,27 +670,32 @@ class _PaymentMethodSelectionScreenState
         if (!updatedSnapshot.exists) return;
 
         int updatedQuantity = int.tryParse(
-                updatedSnapshot['productDetails']['Quantity'].toString()) ??
+            updatedSnapshot['productDetails']['Quantity'].toString()) ??
             0;
 
         if (updatedQuantity >= widget.quantity) {
           transaction.update(productRef, {
             'productDetails.Quantity':
-                (updatedQuantity - widget.quantity).toString(),
+            (updatedQuantity - widget.quantity).toString(),
           });
         } else {
           throw Exception('Not enough stock available');
         }
       });
 
-      await FirebaseFirestore.instance
+      // Create the order document with the generated orderId
+      DocumentReference orderRef = FirebaseFirestore.instance
           .collection('customers')
           .doc(customerId)
           .collection('orders')
-          .add({
+          .doc(orderId);
+
+      await orderRef.set({
+        'orderId': orderId, // Store the order ID in the document
         'productId': widget.productId,
         'name': productInfo['name'],
         'brandName': productInfo['brandName'],
+        'expectedDelivery': productInfo['expectedDelivery'],
         'category': foundCategory,
         'description': productInfo['description'],
         'images': productInfo['images'],
@@ -517,16 +705,17 @@ class _PaymentMethodSelectionScreenState
         'Offer Price': productInfo['productDetails']['Offer Price'],
         'Price': productInfo['productDetails']['Price'],
         'isShowCashOnDelivery': productInfo['productDetails']
-            ['isShowCashOnDelivery'],
+        ['isShowCashOnDelivery'],
+        'status': 'pending',
         'shopName': productInfo['productDetails']['shopName'],
         'productSellerId': widget.selledId,
         'addressDetails': addressDetails,
         'paymentMethod': 'Cash on Delivery',
         'quantity': widget.quantity,
         'totalAmount': (int.tryParse(
-                    productInfo['productDetails']['Offer Price']?.toString() ??
-                        productInfo['productDetails']['Price'].toString()) ??
-                0) *
+            productInfo['productDetails']['Offer Price']?.toString() ??
+                productInfo['productDetails']['Price'].toString()) ??
+            0) *
             widget.quantity,
         'timestamp': FieldValue.serverTimestamp(),
       });

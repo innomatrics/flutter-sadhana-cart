@@ -14,7 +14,39 @@
       },
       "oauth_client": [
         {
-          "client_id": "126398142924-8t9578dnble72nfpjg8o77u4v7ta6n8d.apps.googleusercontent.com",
+          "client_id": "126398142924-324eho9278j1arhsfskbee6okndm9dc6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.innomatrics.sadhana_cart",
+            "certificate_hash": "1c2a97c79592f27946d609634f96e9a06a79a6e8"
+          }
+        },
+        {
+          "client_id": "126398142924-got6qbp9at8un84lnbj5fo8mbiklmf2i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.innomatrics.sadhana_cart",
+            "certificate_hash": "8749f4fb01b1da6ff69a0f137d7e7b0d2a830f19"
+          }
+        },
+        {
+          "client_id": "126398142924-jvmdpgvjs8p41c100pmh4l4kl1efacc5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.innomatrics.sadhana_cart",
+            "certificate_hash": "731d141441353c5d33c6bce32846920daf5713b1"
+          }
+        },
+        {
+          "client_id": "126398142924-n6fsf6b9qpjhjo4tajek8198lo4ecg7o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.innomatrics.sadhana_cart",
+            "certificate_hash": "ef90d55029fca0dcedafbd3018742f715037b390"
+          }
+        },
+        {
+          "client_id": "126398142924-t5s8i5vnvlh2v4fdhohfrpitin6bvcp6.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
@@ -34,7 +66,7 @@
               "client_id": "126398142924-lj8d6upp9v2hkjma44r5eicq1lgfikqh.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.sadhanaCart"
+                "bundle_id": "com.innomatrics.sadhana_cart"
               }
             }
           ]
