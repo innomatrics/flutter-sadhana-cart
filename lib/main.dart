@@ -296,15 +296,15 @@ class MyApp extends StatelessWidget {
     if (kIsWeb) {
       // Return mobile web or desktop web based on detection
       return isMobileWeb()
-          ? const SellerSignInScreen()
-          : const SellerSignInScreen(); // Adjust as   needed
+          ? const WebSellerSignInScreen()
+          : const WebSellerSignInScreen(); // Adjust as   needed
     } else if (defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS) {
       // Return mobile app screens
-      return const SellerSignInScreen();
+      return const WebSellerSignInScreen();
     } else {
       // Default for other platforms (Windows, macOS, Linux)
-      return const SellerSignInScreen(); // Adjust as needed
+      return const WebSellerSignInScreen(); // Adjust as needed
     }
   }
 }
